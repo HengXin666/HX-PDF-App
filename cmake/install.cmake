@@ -47,15 +47,36 @@ target_link_libraries(${projectName} PRIVATE Qt6::Pdf Qt::PdfWidgets)
 # find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 # target_link_libraries(${projectName} PRIVATE Qt6::Concurrent)
 
+# 第三方依赖 (qpdf)
+if (WIN32)
+    list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/lib/qpdf")
+    find_package(qpdf CONFIG REQUIRED)
+    target_link_libraries(${projectName} PRIVATE qpdf::libqpdf)
+
+    # 获取 qpdf 库的 DLL 文件路径
+    get_target_property(QPDF_LIB_DIR qpdf::libqpdf LOCATION)
+    get_filename_component(QPDF_DLL_PATH ${QPDF_LIB_DIR} DIRECTORY)
+    set(QPDF_DLL ${QPDF_DLL_PATH}/qpdf30.dll)
+
+    # 将 DLL 复制到可执行文件的目录
+    add_custom_command(TARGET ${projectName} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${QPDF_DLL} $<TARGET_FILE_DIR:${projectName}>
+    )
+else()
+    find_package(qpdf CONFIG REQUIRED)
+    target_link_libraries(${projectName} PRIVATE qpdf::libqpdf)
+endif()
+
 if (WIN32)
     # 解决路径问题, 确保 windeployqt.exe 存在
-    set(QT_BIN_DIR "${CMAKE_PREFIX_PATH}/bin")
+    set(QT_BIN_DIR "${QT_COMPILER_PATH}/bin")
     if(NOT EXISTS "${QT_BIN_DIR}/windeployqt.exe")
         message(FATAL_ERROR "Error: windeployqt.exe not found in ${QT_BIN_DIR}")
     endif()
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Debug")
+        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Debug")
         add_custom_command(TARGET ${projectName} POST_BUILD
             COMMAND "${QT_BIN_DIR}/windeployqt.exe" --debug "$<TARGET_FILE:${projectName}>"
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/Debug"

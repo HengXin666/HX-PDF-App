@@ -4,6 +4,8 @@
 #include <QPdfDocument>
 #include <QVBoxLayout>
 
+#include <qpdf/QPDF.hh>
+
 class PdfViewer : public QMainWindow {
 public:
     PdfViewer() {
@@ -33,7 +35,42 @@ private:
     QPdfDocument *pdfDocument;
 };
 
-int main(int argc, char *argv[]) {
+#include <qpdf/QPDF.hh>
+#include <qpdf/QPDFObjectHandle.hh>
+#include <QDebug>
+#include <iostream>
+#include <map>
+
+void parsePDF(const std::string &filename) {
+    QPDF pdf;
+    try {
+        pdf.processFile(filename.c_str());
+        
+        // 获取页数
+        std::vector<QPDFObjectHandle> pages = pdf.getAllPages();
+        qDebug() << "PDF 总页数:" << pages.size();
+
+        // 读取 PDF 元数据
+        QPDFObjectHandle info = pdf.getTrailer().getKey("/Info");
+        if (info.isDictionary()) {
+            for (auto const& key : info.getKeys()) {
+                qDebug() << key << ":" << info.getKey(key).unparse();
+            }
+        }
+
+        // 获取交叉引用表信息
+        qDebug() << "交叉引用表 (XRef Table):" << pdf.getXRefTable().size();
+    } catch (std::exception &e) {
+        std::cerr << "解析失败: " << e.what() << std::endl;
+    }
+}
+
+int main() {
+    parsePDF("D:/command/小组/C++-Templates-The-Complete-Guide-zh-20220903.pdf");  // 本地 PDF 文件
+    return 0;
+}
+
+int _main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     PdfViewer viewer;
     viewer.show();
