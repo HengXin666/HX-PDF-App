@@ -23,9 +23,9 @@ target_link_libraries(${projectName}
     PRIVATE Qt::Widgets
 )
 
-# Qt拓展 (PDF)
-find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
-target_link_libraries(${projectName} PRIVATE Qt::PdfWidgets)
+# Qt拓展 (PDF操作 与 渲染)
+find_package(Qt6 REQUIRED COMPONENTS Pdf PdfWidgets)
+target_link_libraries(${projectName} PRIVATE Qt6::Pdf Qt::PdfWidgets)
 
 # Qt拓展 (音频播放)
 # find_package(Qt6 REQUIRED COMPONENTS Multimedia)
