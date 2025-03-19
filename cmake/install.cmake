@@ -32,12 +32,12 @@ target_link_libraries(${projectName} PRIVATE Qt6::Pdf Qt::PdfWidgets)
 # target_link_libraries(${projectName} PRIVATE Qt::Multimedia)
 
 # Qt拓展 (SVG)
-# find_package(Qt6 REQUIRED COMPONENTS Svg)
-# target_link_libraries(${projectName} PRIVATE Qt::Svg)
+find_package(Qt6 REQUIRED COMPONENTS Svg)
+target_link_libraries(${projectName} PRIVATE Qt::Svg)
 
 # Qt拓展 (XML)
-# find_package(Qt6 REQUIRED COMPONENTS Xml)
-# target_link_libraries(${projectName} PRIVATE Qt::Xml)
+find_package(Qt6 REQUIRED COMPONENTS Xml)
+target_link_libraries(${projectName} PRIVATE Qt::Xml)
 
 # Qt拓展 (编码)
 # find_package(Qt6 REQUIRED COMPONENTS Core5Compat)
