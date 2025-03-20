@@ -14,10 +14,6 @@ HX::MainWindow::MainWindow(QWidget* parent)
     setWindowTitle("HX-PDF-APP");
     resize(800, 600);
     setLayout(new QHBoxLayout);
-    setWindowFlags(
-        windowFlags()
-        // | Qt::FramelessWindowHint // 无边框
-    );
     layout()->addWidget(new HX::ViewManageWidget{this});
     GlobalSingleton::get().viewManageProxy.pushView(new HX::HomeView{});
 
