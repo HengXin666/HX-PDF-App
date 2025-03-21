@@ -37,4 +37,7 @@
         <file alias="move.svg">icons/move.svg</file>
         <file alias="center.svg">icons/center.svg</file>
     </qresource>
+    <qresource prefix="/imgs">
+        <file alias="book.png">imgs/book.png</file>
+    </qresource>
 </RCC>

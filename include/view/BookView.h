@@ -17,28 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with HX-PDF-App.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _HX_PDF_VIEW_H_
-#define _HX_PDF_VIEW_H_
+#ifndef _HX_BOOK_VIEW_H_
+#define _HX_BOOK_VIEW_H_
 
 #include <QWidget>
-#include <QPdfDocument>
-#include <QPdfView>
+#include <QListWidget>
 
 namespace HX {
 
-/**
- * @brief PDF 预览界面
- */
-class PdfView : public QWidget {
+class BookView : public QWidget {
     Q_OBJECT
 public:
-    explicit PdfView(QWidget* parent = nullptr);
-    explicit PdfView(const QString& pdfPath, QWidget* parent = nullptr);
+    explicit BookView(QWidget* parent = nullptr);
 private:
-    QPdfView* _pdfView;
-    QPdfDocument* _pdfDocument;
+   QListWidget* _bookList;
 };
 
 } // namespace HX
 
-#endif // !_HX_PDF_VIEW_H_
+#endif // !_HX_BOOK_VIEW_H_

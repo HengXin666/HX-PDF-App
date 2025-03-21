@@ -6,6 +6,7 @@
 
 #include <widget/TopBar.h>
 #include <widget/SideBar.h>
+#include <view/BookView.h>
 
 HX::HomeView::HomeView(QWidget* parent)
     : QWidget(parent)
@@ -31,20 +32,44 @@ HX::HomeView::HomeView(QWidget* parent)
 
     // 样式
     sideBar->setFixedWidth(200);
-    
-    // 可见项: 延迟加载
-    QTimer::singleShot(0, [sideBar] {
-        sideBar->addTopLevelItem("主页").addChild("书籍", [] {
-            qDebug() << "书籍";
-        }).addChild("分类", [] {
-            qDebug() << "分类";
-        }).addChild("已下载", [] {
-            qDebug() << "已下载";
+    // } === 侧边栏 ===
+
+    // === 主视图 === {
+    auto* mainView = new QWidget{this};
+    auto* mainLayout = new QVBoxLayout{mainView};
+    hBoxLayout->addWidget(mainView);
+    // } === 主视图 ===
+
+    // 加载侧边栏可见项 (延迟加载)
+    QTimer::singleShot(0, [sideBar, mainLayout] {
+        auto switchView = [mainLayout](QWidget* newView) {
+            // 清空 mainView 中已有的子控件
+            QLayoutItem* child;
+            while ((child = mainLayout->takeAt(0)) != nullptr) {
+                delete child->widget(); // 删除 widget
+                delete child;
+            }
+            // 添加新的视图
+            mainLayout->addWidget(newView);
+        };
+
+        sideBar->addTopLevelItem("主页").addChild("书籍", [switchView] {
+            auto* bookPage = new BookView;
+            bookPage->setStyleSheet("background-color: lightblue;");
+            switchView(bookPage);
+        }).addChild("分类", [switchView] {
+            auto* categoryPage = new QWidget;
+            categoryPage->setStyleSheet("background-color: lightgreen;");
+            switchView(categoryPage);
+        }).addChild("已下载", [switchView] {
+            auto* downloadPage = new QWidget;
+            downloadPage->setStyleSheet("background-color: lightgray;");
+            switchView(downloadPage);
         });
         
         auto bookShelf = sideBar->addTopLevelItem("书架");
 
-        // 模拟网络加载
+        // 模拟网络加载, @todo 可能会多次调用, 以同步最新数据, 因此需要复用设计
         QTimer::singleShot(1000, [bookShelf = std::move(bookShelf)]() mutable {
             qDebug() << "网络加载完成";
             // 获取书架列表
@@ -56,12 +81,4 @@ HX::HomeView::HomeView(QWidget* parent)
             }
         });
     });
-        
-    // } === 侧边栏 ===
-
-    // 主视图
-    auto* mainView = new QWidget{this};
-    mainView->setMinimumWidth(600);
-    mainView->setStyleSheet("background-color: rgb(255, 45, 45);");
-    hBoxLayout->addWidget(mainView);
 }
