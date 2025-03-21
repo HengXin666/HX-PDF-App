@@ -12,13 +12,11 @@ HX::HomeView::HomeView(QWidget* parent)
     : QWidget(parent)
 {
     auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0); // 设置布局为无边距
     /*
         * 1. 顶部栏
         * 2. 侧边栏 + 主视图
     */
-    // layout->setContentsMargins(0, 0, 0, 0); // 设置布局边距
-    // layout->setSpacing(0); // 设置布局间距
-
     HX::TopBar* _topBal = new HX::TopBar{this};
     _topBal->setMaximumHeight(100);
     layout->addWidget(_topBal);

@@ -36,6 +36,10 @@
         <file alias="pin.svg">icons/pin.svg</file>
         <file alias="move.svg">icons/move.svg</file>
         <file alias="center.svg">icons/center.svg</file>
+        <file alias="menu.svg">icons/menu.svg</file>
+        <file alias="minus.svg">icons/minus.svg</file>
+        <file alias="add.svg">icons/add.svg</file>
+        <file alias="adaptive.svg">icons/adaptive.svg</file>
     </qresource>
     <qresource prefix="/imgs">
         <file alias="book.png">imgs/book.png</file>

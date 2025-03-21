@@ -23,8 +23,8 @@ HX::BookView::BookView(QWidget* parent)
 
         可以点击图片, 然后跳转到书籍详情页 (此处直接是跳转到浏览pdf界面(以测试pdf浏览))
     */
-
     auto* layout = new QVBoxLayout{this};
+    layout->setContentsMargins(0, 0, 0, 0); // 设置布局为无边距
     layout->addWidget(_bookList);
     _bookList->setViewMode(QListWidget::IconMode); // 显示模式
     _bookList->setIconSize({150, 225}); // 图标大小
