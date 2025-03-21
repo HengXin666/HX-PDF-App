@@ -9,6 +9,5 @@ HX::ViewManageWidget::ViewManageWidget(QWidget* parent)
     , _stackedWidget(new QStackedWidget{this})
 {
     (new QVBoxLayout{this})->addWidget(_stackedWidget);
-
     HX::GlobalSingleton::get().viewManageProxy.setMainDisplayBar(this);
 }

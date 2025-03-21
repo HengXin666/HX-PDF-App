@@ -3,7 +3,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
-#include <QLabel>
 
 #include <widget/SvgIconPushButton.h>
 
@@ -66,18 +65,38 @@ HX::PdfView::PdfView(QWidget* parent)
     topMiddleLayout->addWidget(separator);
 
     // 总页数
-    auto* totalPage = new QLabel{"0", this}; // 总页数
-    totalPage->setFixedWidth(50);
-    totalPage->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    topMiddleLayout->addWidget(totalPage);
+    _totalPage = new QLabel{"0", this}; // 总页数
+    _totalPage->setFixedWidth(50);
+    _totalPage->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    topMiddleLayout->addWidget(_totalPage);
 
     topLayout->addStretch();
     // } === 上边栏 ===
 
-    // 侧边栏
-    
-    layout->addWidget(_pdfView);
+    auto* mainContentWidget = new QWidget{this};
+    auto* contentLayout = new QHBoxLayout{mainContentWidget};
+    contentLayout->setSpacing(0);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+
+    // pdf 预览
+    _pdfView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     _pdfView->setDocument(_pdfDocument);
+    contentLayout->addWidget(_pdfView);
+
+    layout->addWidget(mainContentWidget);
+
+    // === 侧边栏 === {
+    _leftDirectoryBar = new HX::LeftDirectoryBar{200, mainContentWidget};
+    _leftDirectoryBar->setGeometry(-200, 0, 200, height() - _totalPage->height());
+    _leftDirectoryBar->updateHeight(height() - _totalPage->height());
+
+    connect(btnSidebar, &QPushButton::clicked, this,
+        [this]() {
+        qDebug() << "Toggle Sidebar" << _leftDirectoryBar->rect() << "{";
+        _leftDirectoryBar->toggle();
+        qDebug() << "} // Toggle Sidebar:" << _leftDirectoryBar->rect();
+    });
+    // } === 侧边栏 ===
 }
 
 HX::PdfView::PdfView(const QString& pdfPath, QWidget* parent)

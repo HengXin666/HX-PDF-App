@@ -23,6 +23,9 @@
 #include <QWidget>
 #include <QPdfDocument>
 #include <QPdfView>
+#include <QLabel>
+
+#include <widget/LeftDirectoryBar.h>
 
 namespace HX {
 
@@ -34,9 +37,19 @@ class PdfView : public QWidget {
 public:
     explicit PdfView(QWidget* parent = nullptr);
     explicit PdfView(const QString& pdfPath, QWidget* parent = nullptr);
+
+protected:
+    void resizeEvent(QResizeEvent* ) override {
+        if (_leftDirectoryBar) {
+            _leftDirectoryBar->updateHeight(height() - _totalPage->height());
+        }
+    }
+
 private:
     QPdfView* _pdfView;
     QPdfDocument* _pdfDocument;
+    LeftDirectoryBar* _leftDirectoryBar; // 左侧边目录栏
+    QLabel* _totalPage; // 总页数
 };
 
 } // namespace HX
