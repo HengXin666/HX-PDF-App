@@ -34,12 +34,14 @@ namespace HX {
  */
 class PdfView : public QWidget {
     Q_OBJECT
+
+    friend class LeftDirectoryBar;
 public:
     explicit PdfView(QWidget* parent = nullptr);
     explicit PdfView(const QString& pdfPath, QWidget* parent = nullptr);
 
 protected:
-    void resizeEvent(QResizeEvent* ) override {
+    void resizeEvent(QResizeEvent*) override {
         if (_leftDirectoryBar) {
             _leftDirectoryBar->updateHeight(height() - _totalPage->height());
         }

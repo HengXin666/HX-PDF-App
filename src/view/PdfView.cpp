@@ -108,7 +108,7 @@ HX::PdfView::PdfView(QWidget* parent)
         // 计算 PDF 页面在像素单位下的实际宽度
         qreal pageWidthPx = (pageWidthPt / 72.0) * dpi;
 
-        // 获取 QPdfView 视口宽度 (单位：px)
+        // 获取 QPdfView 视口宽度 (单位: px)
         int viewportWidth = _pdfView->viewport()->width();
         if (viewportWidth <= 0) 
             return;
@@ -144,7 +144,7 @@ HX::PdfView::PdfView(QWidget* parent)
     layout->addWidget(mainContentWidget);
 
     // === 侧边栏 === {
-    _leftDirectoryBar = new HX::LeftDirectoryBar{200, mainContentWidget};
+    _leftDirectoryBar = new HX::LeftDirectoryBar{200, this, mainContentWidget};
     _leftDirectoryBar->setGeometry(-200, 0, 200, height() - _totalPage->height());
     _leftDirectoryBar->updateHeight(height() - _totalPage->height());
 

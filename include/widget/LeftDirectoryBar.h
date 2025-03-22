@@ -23,8 +23,7 @@
 #include <QWidget>
 #include <QPropertyAnimation>
 
-#include <QVBoxLayout>
-#include <QPushButton>
+
 
 namespace HX {
 
@@ -40,37 +39,12 @@ public:
      * @param w 控件宽度
      * @param parent 父对象
      */
-    LeftDirectoryBar(int w, QWidget* parent = nullptr) 
-        : QWidget(parent)
-        , _animation(new QPropertyAnimation{this, "geometry"})
-    {
-        setFixedWidth(w); // 侧边栏固定宽度
-        setStyleSheet("background-color: #3498db;");
-
-        // 设置动画持续时间
-        _animation->setDuration(500);
-
-        // 设置动画曲线
-        _animation->setEasingCurve(QEasingCurve::InOutSine);
-
-        QVBoxLayout *layout = new QVBoxLayout(this);
-        QPushButton *toggleBtn = new QPushButton("Toggle Sidebar", this);
-        layout->addWidget(toggleBtn);
-        connect(toggleBtn, &QPushButton::clicked, this, &LeftDirectoryBar::toggle);
-    }
+    LeftDirectoryBar(int w, class PdfView* pdfView, QWidget* parent = nullptr);
 
     /**
      * @brief 切换侧边栏显示状态
      */
-    void toggle() {
-        int startX = _visible ? 0 : -width();
-        int endX = _visible ? -width() : 0;
-
-        _animation->setStartValue(QRect(startX, 0, width(), height()));
-        _animation->setEndValue(QRect(endX, 0, width(), height()));
-        _animation->start();
-        _visible = !_visible;
-    }
+    void toggle();
 
     /**
      * @brief 更新控件高度

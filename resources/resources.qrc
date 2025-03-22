@@ -40,6 +40,7 @@
         <file alias="minus.svg">icons/minus.svg</file>
         <file alias="add.svg">icons/add.svg</file>
         <file alias="adaptive.svg">icons/adaptive.svg</file>
+        <file alias="picture.svg">icons/picture.svg</file>
     </qresource>
     <qresource prefix="/imgs">
         <file alias="book.png">imgs/book.png</file>
