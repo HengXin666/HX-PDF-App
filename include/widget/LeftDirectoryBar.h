@@ -23,6 +23,9 @@
 #include <QWidget>
 #include <QPropertyAnimation>
 
+#include <QVBoxLayout>
+#include <QPushButton>
+
 namespace HX {
 
 /**
@@ -44,19 +47,16 @@ public:
         setFixedWidth(w); // 侧边栏固定宽度
         setStyleSheet("background-color: #3498db;");
 
-        // 默认隐藏侧边栏 (如果需要打开, 可以调用 toggle() 方法 (通过配置文件记录是否需要打开))
-        // setGeometry(-w, 0, w, parent->height());
-
         // 设置动画持续时间
         _animation->setDuration(500);
 
         // 设置动画曲线
         _animation->setEasingCurve(QEasingCurve::InOutSine);
 
-        // 动画结束后, 切换状态
-        connect(_animation, &QPropertyAnimation::finished, this, [this]() {
-            _visible = !_visible;
-        });
+        QVBoxLayout *layout = new QVBoxLayout(this);
+        QPushButton *toggleBtn = new QPushButton("Toggle Sidebar", this);
+        layout->addWidget(toggleBtn);
+        connect(toggleBtn, &QPushButton::clicked, this, &LeftDirectoryBar::toggle);
     }
 
     /**
@@ -66,14 +66,10 @@ public:
         int startX = _visible ? 0 : -width();
         int endX = _visible ? -width() : 0;
 
-        qDebug() << "Before Animation:" << geometry();  // 先打印当前 geometry
-
         _animation->setStartValue(QRect(startX, 0, width(), height()));
         _animation->setEndValue(QRect(endX, 0, width(), height()));
-        
         _animation->start();
-
-        qDebug() << "Before start:" << geometry();  // 先打印当前 geometry
+        _visible = !_visible;
     }
 
     /**

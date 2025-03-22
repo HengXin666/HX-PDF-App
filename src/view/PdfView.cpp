@@ -90,11 +90,10 @@ HX::PdfView::PdfView(QWidget* parent)
     _leftDirectoryBar->setGeometry(-200, 0, 200, height() - _totalPage->height());
     _leftDirectoryBar->updateHeight(height() - _totalPage->height());
 
+    // 展开/关闭侧边栏
     connect(btnSidebar, &QPushButton::clicked, this,
         [this]() {
-        qDebug() << "Toggle Sidebar" << _leftDirectoryBar->rect() << "{";
         _leftDirectoryBar->toggle();
-        qDebug() << "} // Toggle Sidebar:" << _leftDirectoryBar->rect();
     });
     // } === 侧边栏 ===
 }
