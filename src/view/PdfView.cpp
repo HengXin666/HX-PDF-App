@@ -3,6 +3,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QTimer>
+#include <QScreen>
+#include <QGuiApplication>
 
 #include <widget/SvgIconPushButton.h>
 
@@ -25,8 +28,9 @@ HX::PdfView::PdfView(QWidget* parent)
 
     // 侧边栏按钮 (显示/隐藏侧边栏)
     auto* btnSidebar = new HX::SvgIconPushButton{
-        ":/icons/menu.svg", "#0", "#990099", this
+        ":/icons/menu.svg", "#FFFFFF", "#990099", this
     };
+    btnSidebar->setFixedSize({32, 32});
     topLayout->addWidget(btnSidebar);
     topLayout->addStretch();
 
@@ -38,18 +42,21 @@ HX::PdfView::PdfView(QWidget* parent)
     auto* btnZoomOut = new HX::SvgIconPushButton{
         ":/icons/minus.svg", "#FFFFFF", "#990099", this
     };
+    btnZoomOut->setFixedSize({32, 32});
     topMiddleLayout->addWidget(btnZoomOut);
 
     // 放大按钮
     auto* btnZoomIn = new HX::SvgIconPushButton{
         ":/icons/add.svg", "#FFFFFF", "#990099", this
     };
+    btnZoomIn->setFixedSize({32, 32});
     topMiddleLayout->addWidget(btnZoomIn);
 
     // 自适应按钮
     auto* btnFit = new HX::SvgIconPushButton{
         ":/icons/adaptive.svg", "#FFFFFF", "#990099", this
     };
+    btnFit->setFixedSize({32, 32});
     topMiddleLayout->addWidget(btnFit);
 
     // 当前页面 (可输入) 页数
@@ -71,6 +78,48 @@ HX::PdfView::PdfView(QWidget* parent)
     topMiddleLayout->addWidget(_totalPage);
 
     topLayout->addStretch();
+
+    // 放大
+    connect(btnZoomIn, &QPushButton::clicked, this, [this](){
+        qreal cdelta = _pdfView->zoomFactor();
+        _pdfView->setZoomFactor(cdelta * 1.1);
+    });
+
+    // 缩小
+    connect(btnZoomOut, &QPushButton::clicked, this, [this](){
+        qreal cdelta = _pdfView->zoomFactor();
+        _pdfView->setZoomFactor(cdelta * 0.9);
+    });
+
+    // 自适应
+    connect(btnFit, &QPushButton::clicked, this, [this](){
+        if (!_pdfView->document() || _pdfView->document()->pageCount() == 0) 
+            return;
+        // 参考: https://forum.qt.io/topic/157002/qpdfview-why-doessn-t-this-work/3
+
+        // 获取屏幕逻辑 DPI
+        qreal dpi = QGuiApplication::primaryScreen()->logicalDotsPerInch();
+
+        // 获取当前 PDF 第一页的宽度 (单位: pt)
+        qreal pageWidthPt = _pdfView->document()->pagePointSize(0).width();
+        if (pageWidthPt <= 0) 
+            return;
+
+        // 计算 PDF 页面在像素单位下的实际宽度
+        qreal pageWidthPx = (pageWidthPt / 72.0) * dpi;
+
+        // 获取 QPdfView 视口宽度 (单位：px)
+        int viewportWidth = _pdfView->viewport()->width();
+        if (viewportWidth <= 0) 
+            return;
+
+        // 计算合适的缩放因子
+        constexpr qreal safetyMargin = 0.96;  // 适当 4% 的偏差
+        qreal zoomFactor = (viewportWidth * safetyMargin) / pageWidthPx;
+
+        _pdfView->setZoomFactor(zoomFactor);
+    });
+
     // } === 上边栏 ===
 
     auto* mainContentWidget = new QWidget{this};
@@ -81,6 +130,15 @@ HX::PdfView::PdfView(QWidget* parent)
     // pdf 预览
     _pdfView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     _pdfView->setDocument(_pdfDocument);
+    // 设置 PDF 查看模式为多页模式
+    _pdfView->setPageMode(QPdfView::PageMode::MultiPage);
+
+    // 设置自定义的缩放模式
+    _pdfView->setZoomMode(QPdfView::ZoomMode::Custom);
+
+    // 去掉边距
+    _pdfView->setContentsMargins(0, 0, 0, 0);
+    _pdfView->viewport()->setContentsMargins(0, 0, 0, 0);
     contentLayout->addWidget(_pdfView);
 
     layout->addWidget(mainContentWidget);
