@@ -26,6 +26,7 @@ QT_BEGIN_NAMESPACE
 class QPdfView;
 class QPdfDocument;
 class QLabel;
+class QLineEdit;
 QT_END_NAMESPACE
 
 namespace HX {
@@ -50,6 +51,7 @@ private:
     QPdfView* _pdfView;
     QPdfDocument* _pdfDocument;
     LeftDirectoryBar* _leftDirectoryBar; // 左侧边目录栏
+    QLineEdit* _currentPage; // 当前页数
     QLabel* _totalPage; // 总页数
 };
 

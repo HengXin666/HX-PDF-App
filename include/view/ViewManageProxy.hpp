@@ -20,6 +20,7 @@
 #ifndef _HX_VIEW_MANAGE_PROXY_H_
 #define _HX_VIEW_MANAGE_PROXY_H_
 
+#include <QStackedWidget>
 #include <widget/ViewManageWidget.h>
 
 namespace HX {
@@ -34,17 +35,17 @@ public:
     }
 
     /**
-        * @brief 添加页面并且显示
-        * @param view 页面
-        */
+     * @brief 添加页面并且显示
+     * @param view 页面
+     */
     void pushView(QWidget* view) {
         _viewManageWidget->_stackedWidget->addWidget(view);
         _viewManageWidget->_stackedWidget->setCurrentWidget(view);
     }
 
     /**
-        * @brief 删除当前显示的页面, 然后显示之后的栈顶界面
-        */
+     * @brief 删除当前显示的页面, 然后显示之后的栈顶界面
+     */
     void popView() {
         if (_viewManageWidget->_stackedWidget->currentIndex() > 0) {
             auto* delView = _viewManageWidget->_stackedWidget->currentWidget();

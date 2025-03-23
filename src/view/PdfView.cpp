@@ -2,11 +2,13 @@
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QIntValidator>
 #include <QLineEdit>
 #include <QTimer>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QPdfDocument>
+#include <QPdfPageNavigator>
 #include <QPdfView>
 #include <QLabel>
 
@@ -64,10 +66,11 @@ HX::PdfView::PdfView(QWidget* parent)
     topMiddleLayout->addWidget(btnFit);
 
     // 当前页面 (可输入) 页数
-    auto* currentPage = new QLineEdit{this};
-    currentPage->setFixedWidth(50);
-    currentPage->setAlignment(Qt::AlignCenter);
-    topMiddleLayout->addWidget(currentPage);
+    _currentPage = new QLineEdit{this};
+    _currentPage->setFixedWidth(50);
+    _currentPage->setAlignment(Qt::AlignCenter);
+    _currentPage->setValidator(new QIntValidator{this});
+    topMiddleLayout->addWidget(_currentPage);
 
     // 分界
     auto* separator = new QLabel{"/", this};
@@ -76,7 +79,7 @@ HX::PdfView::PdfView(QWidget* parent)
     topMiddleLayout->addWidget(separator);
 
     // 总页数
-    _totalPage = new QLabel{"0", this}; // 总页数
+    _totalPage = new QLabel{"0 页", this}; // 总页数
     _totalPage->setFixedWidth(50);
     _totalPage->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     topMiddleLayout->addWidget(_totalPage);
@@ -124,6 +127,25 @@ HX::PdfView::PdfView(QWidget* parent)
         _pdfView->setZoomFactor(zoomFactor);
     });
 
+    auto* nav = _pdfView->pageNavigator();
+
+    // 滚动后触发 更新当前页面
+    connect(nav, &QPdfPageNavigator::currentPageChanged, this,
+        [this](int index) {
+        _currentPage->setText(QString{"%1"}.arg(index + 1));
+    });
+
+    // 回车后, 跳转到界面
+    connect(_currentPage, &QLineEdit::returnPressed, this,
+        [this, nav](){
+        int page = _currentPage->text().toInt();
+        if (page <= 0 || page > _pdfDocument->pageCount()) {
+            _currentPage->setText(QString{"%1"}.arg(nav->currentPage() + 1));
+            return;
+        }
+        nav->update(page - 1, {}, nav->currentZoom());
+    });
+
     // } === 上边栏 ===
 
     auto* mainContentWidget = new QWidget{this};
@@ -164,6 +186,8 @@ HX::PdfView::PdfView(const QString& pdfPath, QWidget* parent)
     : HX::PdfView(parent)
 {
     _pdfDocument->load(pdfPath);
+    _totalPage->setText(QString{"%1 页"}.arg(_pdfDocument->pageCount()));
+    _currentPage->setText(QString{"%1"}.arg(_pdfView->pageNavigator()->currentPage() + 1));
 }
 
 void HX::PdfView::resizeEvent(QResizeEvent*) {
