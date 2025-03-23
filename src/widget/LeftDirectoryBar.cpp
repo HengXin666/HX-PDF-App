@@ -7,6 +7,9 @@
 #include <QListWidget>
 #include <QPdfBookmarkModel>
 #include <QPdfPageNavigator>
+#include <QPdfDocument>
+#include <QPdfView>
+#include <QPropertyAnimation>
 #include <QStandardItemModel>
 
 #include <view/PdfView.h>
@@ -65,14 +68,13 @@ LeftDirectoryBar::LeftDirectoryBar(int w, PdfView* pdfView, QWidget* parent)
         [this, bookmodel, nav](const QModelIndex& index) {
         int jumpPage = bookmodel->data(index, int(QPdfBookmarkModel::Role::Page)).toInt();
         QPointF jumppos = bookmodel->data(index, int(QPdfBookmarkModel::Role::Location)).toPointF();
-        nav->jump(jumpPage, jumppos);
-        nav->update(jumpPage, jumppos, 0);  // 更新导航器
+        nav->update(jumpPage, jumppos, nav->currentZoom());
     });
 
     // 点击缩略图目录事件
     connect(imgView, &QListWidget::clicked, this,
     [this, imgView, nav](const QModelIndex& index) {
-        nav->jump(index.row(), {}, nav->currentZoom());
+        nav->update(index.row(), {}, nav->currentZoom());
     });
 }
 

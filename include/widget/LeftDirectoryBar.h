@@ -21,9 +21,10 @@
 #define _HX_LEFT_DIRECTORY_BAR_H_
 
 #include <QWidget>
-#include <QPropertyAnimation>
 
-
+QT_BEGIN_NAMESPACE
+class QPropertyAnimation;
+QT_END_NAMESPACE
 
 namespace HX {
 

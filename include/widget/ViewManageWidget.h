@@ -21,7 +21,10 @@
 #define _HX_VIEW_MANAGE_WIDGET_H_
 
 #include <QWidget>
-#include <QStackedWidget>
+
+QT_BEGIN_NAMESPACE
+class QStackedWidget;
+QT_END_NAMESPACE
 
 namespace HX {
 

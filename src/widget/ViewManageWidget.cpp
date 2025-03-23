@@ -1,6 +1,7 @@
 #include <widget/ViewManageWidget.h>
 
 #include <QVBoxLayout>
+#include <QStackedWidget>
 
 #include <singleton/GlobalSingleton.hpp>
 

@@ -1,7 +1,12 @@
 #include <widget/TopBar.h>
 
+#include <QEvent>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
+#include <QPushButton>
+#include <QToolButton>
 
 #include <singleton/GlobalSingleton.hpp>
 #include <singleton/SignalBusSingleton.hpp>
@@ -103,4 +108,15 @@ HX::TopBar::TopBar(QWidget* parent)
     [this]() {
         _btnMaximize->setIcon(QIcon(":/icons/up.svg"));
     });
+}
+
+void HX::TopBar::updateMaximizeIcon() {
+    QWidget* mainWindow = window();
+    if (!mainWindow) 
+        return;
+    if (mainWindow->isMaximized()) {
+        _btnMaximize->setIcon(QIcon(":/icons/restore.svg"));
+    } else {
+        _btnMaximize->setIcon(QIcon(":/icons/up.svg"));
+    }
 }

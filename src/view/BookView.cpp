@@ -2,6 +2,7 @@
 
 #include <QVBoxLayout>
 #include <QListWidget>
+#include <QListWidget>
 
 #include <singleton/GlobalSingleton.hpp>
 #include <view/PdfView.h>

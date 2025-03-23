@@ -21,7 +21,10 @@
 #define _HX_BOOK_VIEW_H_
 
 #include <QWidget>
-#include <QListWidget>
+
+QT_BEGIN_NAMESPACE
+class QListWidget;
+QT_END_NAMESPACE
 
 namespace HX {
 

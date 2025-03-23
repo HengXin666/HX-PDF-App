@@ -21,13 +21,16 @@
 #define _HX_PDF_VIEW_H_
 
 #include <QWidget>
-#include <QPdfDocument>
-#include <QPdfView>
-#include <QLabel>
 
-#include <widget/LeftDirectoryBar.h>
+QT_BEGIN_NAMESPACE
+class QPdfView;
+class QPdfDocument;
+class QLabel;
+QT_END_NAMESPACE
 
 namespace HX {
+
+class LeftDirectoryBar;
 
 /**
  * @brief PDF 预览界面
@@ -35,17 +38,13 @@ namespace HX {
 class PdfView : public QWidget {
     Q_OBJECT
 
-    friend class LeftDirectoryBar;
+    friend LeftDirectoryBar;
 public:
     explicit PdfView(QWidget* parent = nullptr);
     explicit PdfView(const QString& pdfPath, QWidget* parent = nullptr);
 
 protected:
-    void resizeEvent(QResizeEvent*) override {
-        if (_leftDirectoryBar) {
-            _leftDirectoryBar->updateHeight(height() - _totalPage->height());
-        }
-    }
+    void resizeEvent(QResizeEvent*) override;
 
 private:
     QPdfView* _pdfView;

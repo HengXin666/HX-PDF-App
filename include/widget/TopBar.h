@@ -22,11 +22,11 @@
 
 #include <QWidget>
 
-#include <QLineEdit>
-#include <QLabel>
-#include <QPushButton>
-#include <QToolButton>
-#include <QEvent>
+QT_BEGIN_NAMESPACE
+class QPushButton;
+class QLineEdit;
+class QLabel;
+QT_END_NAMESPACE
 
 namespace HX {
 
@@ -42,16 +42,7 @@ private:
     /**
     * @brief 还原窗口
     */
-    void updateMaximizeIcon() {
-        QWidget *mainWindow = this->window();
-        if (!mainWindow) 
-            return;
-        if (mainWindow->isMaximized()) {
-            _btnMaximize->setIcon(QIcon(":/icons/restore.svg"));
-        } else {
-            _btnMaximize->setIcon(QIcon(":/icons/up.svg"));
-        }
-    }
+    void updateMaximizeIcon();
 
     // 如果存在可回退界面, 则显示该按钮
     QPushButton* _btnPop;

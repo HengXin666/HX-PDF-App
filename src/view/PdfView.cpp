@@ -6,8 +6,12 @@
 #include <QTimer>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QPdfDocument>
+#include <QPdfView>
+#include <QLabel>
 
 #include <widget/SvgIconPushButton.h>
+#include <widget/LeftDirectoryBar.h>
 
 HX::PdfView::PdfView(QWidget* parent)
     : QWidget(parent)
@@ -160,4 +164,10 @@ HX::PdfView::PdfView(const QString& pdfPath, QWidget* parent)
     : HX::PdfView(parent)
 {
     _pdfDocument->load(pdfPath);
+}
+
+void HX::PdfView::resizeEvent(QResizeEvent*) {
+    if (_leftDirectoryBar) {
+        _leftDirectoryBar->updateHeight(height() - _totalPage->height());
+    }
 }
