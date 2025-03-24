@@ -44,8 +44,8 @@ target_link_libraries(${projectName} PRIVATE Qt::Xml)
 # target_link_libraries(${projectName} PRIVATE Qt::Core5Compat)
 
 # Qt拓展 (并行库)
-# find_package(Qt6 REQUIRED COMPONENTS Concurrent)
-# target_link_libraries(${projectName} PRIVATE Qt6::Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Concurrent)
+target_link_libraries(${projectName} PRIVATE Qt::Concurrent)
 
 # Qt拓展 (网络库)
 find_package(Qt6 REQUIRED COMPONENTS Network)
