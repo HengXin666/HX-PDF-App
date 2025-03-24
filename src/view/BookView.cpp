@@ -40,6 +40,7 @@ HX::BookView::BookView(QWidget* parent)
         item->setIcon(QIcon{":/imgs/book.png"});
         item->setText("书籍名称");
         item->setData(Qt::UserRole, "D:/command/编程学习资料/04、GitHub使用帮助.pdf");
+        // item->setData(Qt::UserRole, "D:/command/小组/C++-Templates-The-Complete-Guide-zh-20220903.pdf");
         item->setTextAlignment(Qt::AlignHCenter);
     }
 

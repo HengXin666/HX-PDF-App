@@ -153,6 +153,9 @@ HX::PdfView::PdfView(QWidget* parent)
     contentLayout->setSpacing(0);
     contentLayout->setContentsMargins(0, 0, 0, 0);
 
+
+    // === pdf 渲染设置 ===
+
     // pdf 预览
     _pdfView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     _pdfView->setDocument(_pdfDocument);

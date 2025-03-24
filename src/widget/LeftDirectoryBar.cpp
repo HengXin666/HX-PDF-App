@@ -36,6 +36,7 @@ LeftDirectoryBar::LeftDirectoryBar(int w, PdfView* pdfView, QWidget* parent)
     // 目录视图
     auto* bookView = new QTreeView{this};
     tabWidget->addTab(bookView, QIcon{":/icons/menu.svg"}, "");
+    bookView->setHeaderHidden(true);
     tabWidget->setTabToolTip(0, "列表目录");
 
     // 创建书签模型, 并设置到书签视图

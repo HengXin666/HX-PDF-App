@@ -47,6 +47,10 @@ target_link_libraries(${projectName} PRIVATE Qt::Xml)
 # find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 # target_link_libraries(${projectName} PRIVATE Qt6::Concurrent)
 
+# Qt拓展 (网络库)
+find_package(Qt6 REQUIRED COMPONENTS Network)
+target_link_libraries(${projectName} PRIVATE Qt::Network)
+
 # 第三方依赖 (qpdf)
 if (WIN32)
     list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/lib/qpdf")
