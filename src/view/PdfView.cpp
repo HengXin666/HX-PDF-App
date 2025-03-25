@@ -5,6 +5,8 @@
 #include <QIntValidator>
 #include <QLineEdit>
 #include <QTimer>
+#include <QScrollBar>
+#include <QAbstractItemModel>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QPdfDocument>
@@ -14,10 +16,13 @@
 
 #include <widget/SvgIconPushButton.h>
 #include <widget/LeftDirectoryBar.h>
+#include <widget/PdfListView.h>
+#include <delegate/VerticalPdfDelegate.h>
+#include <model/LazyPdfModel.h>
 
 HX::PdfView::PdfView(QWidget* parent)
     : QWidget(parent)
-    , _pdfView(new QPdfView{this})
+    , _pdfView(new PdfListView{this})
     , _pdfDocument(new QPdfDocument{this})
 {
     /*
@@ -100,7 +105,7 @@ HX::PdfView::PdfView(QWidget* parent)
 
     // 自适应
     connect(btnFit, &QPushButton::clicked, this, [this](){
-        if (!_pdfView->document() || _pdfView->document()->pageCount() == 0) 
+        if (!_pdfDocument|| _pdfDocument->pageCount() == 0) 
             return;
         // 参考: https://forum.qt.io/topic/157002/qpdfview-why-doessn-t-this-work/3
 
@@ -108,7 +113,7 @@ HX::PdfView::PdfView(QWidget* parent)
         qreal dpi = QGuiApplication::primaryScreen()->logicalDotsPerInch();
 
         // 获取当前 PDF 第一页的宽度 (单位: pt)
-        qreal pageWidthPt = _pdfView->document()->pagePointSize(0).width();
+        qreal pageWidthPt = _pdfDocument->pagePointSize(0).width();
         if (pageWidthPt <= 0) 
             return;
 
@@ -127,23 +132,23 @@ HX::PdfView::PdfView(QWidget* parent)
         _pdfView->setZoomFactor(zoomFactor);
     });
 
-    auto* nav = _pdfView->pageNavigator();
+    // auto* nav = _pdfView->pageNavigator();
 
     // 滚动后触发 更新当前页面
-    connect(nav, &QPdfPageNavigator::currentPageChanged, this,
-        [this](int index) {
-        _currentPage->setText(QString{"%1"}.arg(index + 1));
+    connect(_pdfView->verticalScrollBar(), &QScrollBar::valueChanged, this,
+        [this](int value) {
+        _currentPage->setText(QString{"%1"}.arg(_pdfView->getVisibleIndex() + 1));
     });
 
     // 回车后, 跳转到界面
     connect(_currentPage, &QLineEdit::returnPressed, this,
-        [this, nav](){
+        [this](){
         int page = _currentPage->text().toInt();
         if (page <= 0 || page > _pdfDocument->pageCount()) {
-            _currentPage->setText(QString{"%1"}.arg(nav->currentPage() + 1));
+            _currentPage->setText(QString{"%1"}.arg(_pdfView->getVisibleIndex() + 1));
             return;
         }
-        nav->update(page - 1, {}, nav->currentZoom());
+        _pdfView->scrollTo(_pdfView->model()->index(page - 1, 0), QAbstractItemView::PositionAtCenter);
     });
 
     // } === 上边栏 ===
@@ -157,20 +162,40 @@ HX::PdfView::PdfView(QWidget* parent)
     // === pdf 渲染设置 ===
 
     // pdf 预览
-    _pdfView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    _pdfView->setDocument(_pdfDocument);
-    // 设置 PDF 查看模式为多页模式
-    _pdfView->setPageMode(QPdfView::PageMode::MultiPage);
+    _pdfView->setUniformItemSizes(true);
+    _pdfView->setVerticalScrollMode(QListView::ScrollPerPixel);
 
-    // 设置自定义的缩放模式
-    _pdfView->setZoomMode(QPdfView::ZoomMode::Custom);
+    // _pdfView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    auto* pdfModel = new LazyPdfModel{_pdfDocument, _pdfView};
+    _pdfView->setModel(pdfModel);
+    _pdfView->setItemDelegate(new VerticalPdfDelegate{pdfModel, _pdfView});
 
     // 去掉边距
-    _pdfView->setContentsMargins(0, 0, 0, 0);
-    _pdfView->viewport()->setContentsMargins(0, 0, 0, 0);
+    // _pdfView->setContentsMargins(0, 0, 0, 0);
+    // _pdfView->viewport()->setContentsMargins(0, 0, 0, 0);
     contentLayout->addWidget(_pdfView);
 
     layout->addWidget(mainContentWidget);
+
+    // 同步缩放变化
+    connect(_pdfView, &PdfListView::scaleChanged,
+            pdfModel, &LazyPdfModel::setScaleFactor);
+    
+    // 预加载
+    auto updateVisibleArea = [this, pdfModel]() {
+        QRect viewportRect = _pdfView->viewport()->rect();
+        int rowHeight = pdfModel->getSize().height();
+        int startRow = _pdfView->verticalScrollBar()->value() / rowHeight;
+        int endRow = (_pdfView->verticalScrollBar()->value() + viewportRect.height()) / rowHeight;
+        pdfModel->preloadVisibleArea(startRow, endRow);
+    };
+
+    // 跟随渲染可见之处
+    connect(_pdfView->verticalScrollBar(), &QScrollBar::valueChanged, updateVisibleArea);
+
+    // 定时预渲染
+    QTimer::singleShot(500, updateVisibleArea);
 
     // === 侧边栏 === {
     _leftDirectoryBar = new HX::LeftDirectoryBar{200, this, mainContentWidget};
@@ -190,7 +215,7 @@ HX::PdfView::PdfView(const QString& pdfPath, QWidget* parent)
 {
     _pdfDocument->load(pdfPath);
     _totalPage->setText(QString{"%1 页"}.arg(_pdfDocument->pageCount()));
-    _currentPage->setText(QString{"%1"}.arg(_pdfView->pageNavigator()->currentPage() + 1));
+    _currentPage->setText(QString{"%1"}.arg(1));
 }
 
 void HX::PdfView::resizeEvent(QResizeEvent*) {

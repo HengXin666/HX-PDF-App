@@ -39,12 +39,11 @@ class LazyPdfModel : public QAbstractListModel {
 public:
     /**
      * @brief Construct a new Lazy Pdf Model object
-     * 
      * @param cnt 总页面数
      * @param document 文档
      * @param parent 
      */
-    explicit LazyPdfModel(int cnt, QPdfDocument* document, QObject* parent = nullptr);
+    explicit LazyPdfModel(QPdfDocument* document, QObject* parent = nullptr);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override {
         Q_UNUSED(parent)
@@ -61,6 +60,20 @@ public:
      */
     void preloadVisibleArea(int start, int end, int margin = 10);
 
+    void setScaleFactor(double factor) {
+        _zoomFactor = factor;
+        _imageCache.clear();  // 缩放时重新加载
+        emit dataChanged(index(0), index(rowCount() - 1), {Qt::DecorationRole});
+    }
+
+    QSize getSize() const {
+        auto [w, h] = _baseSize;
+        return QSize{
+            static_cast<int>(w * _zoomFactor),
+            static_cast<int>(h * _zoomFactor),
+        };
+    }
+
 Q_SIGNALS:
     void needUpdate();
 
@@ -71,8 +84,10 @@ private:
      */
     void loadImage(int row);
 
-    int _cnt;
-    QPixmap _placeholder;
+    int _cnt; // 总页数
+    float _zoomFactor{1.f}; // 缩放因子
+    QSizeF _baseSize;  // 基础画面大小
+    QPixmap _placeholder; // 占位图片 (未加载时候的临时显示)
     mutable QCache<int, QPixmap> _imageCache;
     QSet<int> _pendingLoads;
     QPdfPageRenderer* _renderer;

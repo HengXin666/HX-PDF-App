@@ -13,6 +13,7 @@
 #include <QStandardItemModel>
 
 #include <view/PdfView.h>
+#include <widget/PdfListView.h>
 
 namespace HX {
 
@@ -61,21 +62,22 @@ LeftDirectoryBar::LeftDirectoryBar(int w, PdfView* pdfView, QWidget* parent)
     // 设置图片视图的模型
     imgView->setModel(pdfView->_pdfDocument->pageModel());
     imgView->setItemAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-
-    auto* nav = pdfView->_pdfView->pageNavigator();
     
     // 点击树状列表目录事件
     connect(bookView, &QTreeView::clicked, this,
-        [this, bookmodel, nav](const QModelIndex& index) {
-        int jumpPage = bookmodel->data(index, int(QPdfBookmarkModel::Role::Page)).toInt();
-        QPointF jumppos = bookmodel->data(index, int(QPdfBookmarkModel::Role::Location)).toPointF();
-        nav->update(jumpPage, jumppos, nav->currentZoom());
+        [this, bookmodel, pdfView](const QModelIndex& index) {
+        // int jumpPage = bookmodel->data(index, int(QPdfBookmarkModel::Role::Page)).toInt();
+        // QPointF jumpPos = bookmodel->data(index, int(QPdfBookmarkModel::Role::Location)).toPointF();
+        // nav->update(jumpPage, jumpPos, nav->currentZoom());
+        pdfView->_pdfView->scrollTo(index, QAbstractItemView::PositionAtCenter);
     });
 
     // 点击缩略图目录事件
     connect(imgView, &QListWidget::clicked, this,
-    [this, imgView, nav](const QModelIndex& index) {
-        nav->update(index.row(), {}, nav->currentZoom());
+    [this, imgView, pdfView](const QModelIndex& index) {
+        // nav->update(index.row(), {}, nav->currentZoom());
+        // pdfView->_pdfView->model()->index(, int column)
+        pdfView->_pdfView->scrollTo(index, QAbstractItemView::PositionAtCenter);
     });
 }
 

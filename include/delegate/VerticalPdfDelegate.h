@@ -17,45 +17,34 @@
  * You should have received a copy of the GNU General Public License
  * along with HX-PDF-App.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _HX_PDF_VIEW_H_
-#define _HX_PDF_VIEW_H_
+#ifndef _HX_VERTICAL_PDF_DELEGATE_H_
+#define _HX_VERTICAL_PDF_DELEGATE_H_
 
-#include <QWidget>
-
-QT_BEGIN_NAMESPACE
-class QPdfView;
-class QPdfDocument;
-class QLabel;
-class QLineEdit;
-QT_END_NAMESPACE
+#include <QStyledItemDelegate>
 
 namespace HX {
 
-class LeftDirectoryBar;
-class PdfListView;
+class LazyPdfModel;
 
-/**
- * @brief PDF 预览界面
- */
-class PdfView : public QWidget {
-    Q_OBJECT
-
-    friend LeftDirectoryBar;
+class VerticalPdfDelegate : public QStyledItemDelegate {
 public:
-    explicit PdfView(QWidget* parent = nullptr);
-    explicit PdfView(const QString& pdfPath, QWidget* parent = nullptr);
+    explicit VerticalPdfDelegate(LazyPdfModel* model, QObject* parent = nullptr);
 
-protected:
-    void resizeEvent(QResizeEvent*) override;
+    void paint(
+        QPainter* painter, 
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+    ) const override;
+
+    QSize sizeHint(
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+    ) const override;
 
 private:
-    PdfListView* _pdfView;
-    QPdfDocument* _pdfDocument;
-    LeftDirectoryBar* _leftDirectoryBar; // 左侧边目录栏
-    QLineEdit* _currentPage; // 当前页数
-    QLabel* _totalPage; // 总页数
+    LazyPdfModel* _model;
 };
 
 } // namespace HX
 
-#endif // !_HX_PDF_VIEW_H_
+#endif // !_HX_VERTICAL_PDF_DELEGATE_H_

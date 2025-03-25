@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <window/MainWindow.h>
 
-int _main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     HX::MainWindow window;
     window.show();
@@ -87,7 +87,7 @@ private:
     QLabel *label;
 };
 
-int __main(int argc, char *argv[]) {
+int __2main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     // PdfViewer viewer("D:/command/编程学习资料/04、GitHub使用帮助.pdf");
     PdfViewer viewer("D:/command/小组/C++-Templates-The-Complete-Guide-zh-20220903.pdf");
@@ -234,7 +234,7 @@ private:
     double scaleFactor = 1.0;
 };
 
-int main(int argc, char *argv[]) {
+int __main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     ScalableListView listView;
@@ -254,7 +254,8 @@ int main(int argc, char *argv[]) {
     };
 
     QObject::connect(listView.verticalScrollBar(), &QScrollBar::valueChanged, updateVisibleArea);
-    QObject::connect(&listView, &ScalableListView::scaleChanged, model, &LazyImageModel::setScaleFactor);
+    QObject::connect(&listView, &ScalableListView::scaleChanged, 
+        model, &LazyImageModel::setScaleFactor);
     QTimer::singleShot(500, updateVisibleArea);
 
     listView.show();

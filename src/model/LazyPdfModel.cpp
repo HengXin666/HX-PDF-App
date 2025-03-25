@@ -6,10 +6,11 @@
 
 namespace HX {
 
-LazyPdfModel::LazyPdfModel(int cnt, QPdfDocument* document, QObject* parent)
+LazyPdfModel::LazyPdfModel(QPdfDocument* document, QObject* parent)
     : QAbstractListModel(parent)
-    , _cnt(cnt)
-    , _placeholder(500, 500) 
+    , _cnt(document->pageCount())
+    , _baseSize(document->pagePointSize(0))
+    , _placeholder(_baseSize.toSize()) 
     , _renderer(new QPdfPageRenderer{this})
 {
     _renderer->setDocument(document);
@@ -18,6 +19,35 @@ LazyPdfModel::LazyPdfModel(int cnt, QPdfDocument* document, QObject* parent)
 
     _placeholder.fill(Qt::darkGray);
     _imageCache.setMaxCost(200);  // 缓存容量
+
+    // 渲染完成
+    connect(_renderer, &QPdfPageRenderer::pageRendered, this,
+        [this](
+        int pageNumber,
+        QSize imageSize,
+        const QImage& image,
+        QPdfDocumentRenderOptions options,
+        quint64 requestId
+    ) {
+        qDebug() << "已渲染" << pageNumber;
+
+        // 无需担心析构, QCache会处理好的
+        _imageCache.insert(pageNumber, new QPixmap(QPixmap::fromImage(image)));
+
+        // 触发 UI 更新
+        // 告诉 Model 第 pageNumber 行有更新, 其内部会调用 data() 进行渲染,
+        // 此时 _imageCache.contains(pageNumber) 为 true
+        emit dataChanged(index(pageNumber), index(pageNumber), {Qt::DecorationRole});
+        
+        _pendingLoads.remove(pageNumber);
+    });
+
+    // 页数变化 todo
+    connect(document, &QPdfDocument::pageCountChanged, this,
+        [this](int pageCount) {
+        qDebug() << "新加载的页数:" << pageCount;
+        _cnt = pageCount;
+    });
 }
 
 QVariant LazyPdfModel::data(const QModelIndex& index, int role) const {
@@ -46,27 +76,13 @@ void LazyPdfModel::loadImage(int row) {
     // 记录正在加载的图片, 防止重复加载
     _pendingLoads.insert(row);
 
-    // 开一个新线程, 不阻塞 ui线程
-    (void)QtConcurrent::run([this, row]() {
-        QString path = QString("E:/图片/图片/neko01.jpg");
-        QImage image(path);
-        if (image.isNull()) 
-            return;
-        QImage scaled = image.scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        
-        // 跨线程调用 (此处是安全的调用 ui线程 的成员(QAbstractItemModel::dataChanged)信号)
-        QMetaObject::invokeMethod(this, [this, row, scaled]() {
-            QPixmap* pix = new QPixmap(QPixmap::fromImage(scaled));
-            _imageCache.insert(row, pix); // 无需担心析构, QCache会处理好的
+    auto [w, h] = _baseSize;
+    w *= _zoomFactor;
+    h *= _zoomFactor;
 
-            // 触发 UI 更新
-            // 告诉 Model 第 row 行有更新, 其内部会调用 data() 进行渲染,
-            // 此时 _imageCache.contains(row) 为 true
-            emit dataChanged(index(row), index(row), {Qt::DecorationRole});
-            
-            _pendingLoads.remove(row);
-        }, Qt::QueuedConnection /*发送一个QEvent, 并在应用程序进入主事件循环后立即调用*/);
-    });
+    // 加入渲染队列
+    qDebug() << "渲染中:" << row;
+    _renderer->requestPage(row, QSize{static_cast<int>(w), static_cast<int>(h)});
 }
 
 } // namespace HX

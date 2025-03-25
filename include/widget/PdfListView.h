@@ -17,45 +17,39 @@
  * You should have received a copy of the GNU General Public License
  * along with HX-PDF-App.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _HX_PDF_VIEW_H_
-#define _HX_PDF_VIEW_H_
+#ifndef _HX_PDF_LIST_VIEW_H_
+#define _HX_PDF_LIST_VIEW_H_
 
-#include <QWidget>
-
-QT_BEGIN_NAMESPACE
-class QPdfView;
-class QPdfDocument;
-class QLabel;
-class QLineEdit;
-QT_END_NAMESPACE
+#include <QListView>
 
 namespace HX {
 
-class LeftDirectoryBar;
-class PdfListView;
-
-/**
- * @brief PDF 预览界面
- */
-class PdfView : public QWidget {
+class PdfListView : public QListView {
     Q_OBJECT
-
-    friend LeftDirectoryBar;
 public:
-    explicit PdfView(QWidget* parent = nullptr);
-    explicit PdfView(const QString& pdfPath, QWidget* parent = nullptr);
+    explicit PdfListView(QWidget* parent = nullptr);
+
+    double zoomFactor() const {
+        return _zoomFactor;
+    }
+
+    void setZoomFactor(double zoomFactor) {
+        _zoomFactor = zoomFactor;
+        emit scaleChanged(_zoomFactor);
+    }
+
+    int getVisibleIndex() const;
 
 protected:
-    void resizeEvent(QResizeEvent*) override;
+    void wheelEvent(QWheelEvent* event) override;
+
+Q_SIGNALS:
+    void scaleChanged(double factor);
 
 private:
-    PdfListView* _pdfView;
-    QPdfDocument* _pdfDocument;
-    LeftDirectoryBar* _leftDirectoryBar; // 左侧边目录栏
-    QLineEdit* _currentPage; // 当前页数
-    QLabel* _totalPage; // 总页数
+    double _zoomFactor = 1.0;
 };
 
 } // namespace HX
 
-#endif // !_HX_PDF_VIEW_H_
+#endif // !_HX_PDF_LIST_VIEW_H_
