@@ -14,6 +14,7 @@ LazyPdfModel::LazyPdfModel(QPdfDocument* document, QObject* parent)
     , _renderer(new QPdfPageRenderer{this})
 {
     _renderer->setDocument(document);
+    
     // 设置为: 所有页面都在单独的工作线程中渲染
     _renderer->setRenderMode(QPdfPageRenderer::RenderMode::MultiThreaded);
 
@@ -42,11 +43,12 @@ LazyPdfModel::LazyPdfModel(QPdfDocument* document, QObject* parent)
         _pendingLoads.remove(pageNumber);
     });
 
-    // 页数变化 todo
+    // 页数变化 todo !!!以后改为根据状态!!!
     connect(document, &QPdfDocument::pageCountChanged, this,
-        [this](int pageCount) {
+        [this, document](int pageCount) {
         qDebug() << "新加载的页数:" << pageCount;
         _cnt = pageCount;
+        _baseSize = document->pagePointSize(0);
     });
 }
 
@@ -75,6 +77,9 @@ void LazyPdfModel::preloadVisibleArea(int start, int end, int margin) {
 void LazyPdfModel::loadImage(int row) {
     // 记录正在加载的图片, 防止重复加载
     _pendingLoads.insert(row);
+
+    if (_cnt == 0)
+        return;
 
     auto [w, h] = _baseSize;
     w *= _zoomFactor;
