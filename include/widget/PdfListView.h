@@ -22,6 +22,10 @@
 
 #include <QListView>
 
+QT_BEGIN_NAMESPACE
+class QPropertyAnimation;
+QT_END_NAMESPACE
+
 namespace HX {
 
 class PdfListView : public QListView {
@@ -48,6 +52,7 @@ Q_SIGNALS:
 
 private:
     double _zoomFactor = 1.0;
+    QPropertyAnimation* _barAnimation;
 };
 
 } // namespace HX

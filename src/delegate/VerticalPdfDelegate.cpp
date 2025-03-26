@@ -20,26 +20,23 @@ void VerticalPdfDelegate::paint(
     if (pix.isNull())
         return;
 
-    // 保持原始比例缩放
-    double aspectRatio = static_cast<double>(pix.width()) / pix.height();
-    int scaledHeight = _model->getSize().height();
-    int scaledWidth = static_cast<int>(aspectRatio * scaledHeight);
-
-    // 计算居中绘制位置
+    // 直接使用 预缩放的 QPixmap
     QRect targetRect = option.rect;
-    if (targetRect.width() > scaledWidth) {  // 窗口比图片宽, 居中
-        int xOffset = (targetRect.width() - scaledWidth) / 2;
+
+    // 计算居中位置（但不再重新缩放）
+    if (targetRect.width() > pix.width()) {  
+        int xOffset = (targetRect.width() - pix.width()) / 2;
         targetRect.setX(targetRect.x() + xOffset);
-        targetRect.setWidth(scaledWidth);
-    } else {  // 窗口比图片窄, 等比例缩放
-        targetRect.setWidth(scaledWidth);
+        targetRect.setWidth(pix.width());
+    } else {
+        targetRect.setWidth(pix.width());
     }
-    targetRect.setHeight(scaledHeight);
+    targetRect.setHeight(pix.height());
 
-    // 白色背景
-    painter->fillRect(targetRect, Qt::white);
+    // painter->setRenderHint(QPainter::Antialiasing, true);
+    // painter->setRenderHint(QPainter::TextAntialiasing, true);
 
-    // 渲染pdf
+    // 直接绘制
     painter->drawPixmap(targetRect, pix);
 }
 

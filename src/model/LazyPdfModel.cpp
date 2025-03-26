@@ -1,5 +1,6 @@
 #include <model/LazyPdfModel.h>
 
+#include <QPainter>
 #include <QtConcurrent>
 #include <QPdfDocument>
 #include <QPdfPageRenderer>
@@ -30,17 +31,29 @@ LazyPdfModel::LazyPdfModel(QPdfDocument* document, QObject* parent)
         QPdfDocumentRenderOptions options,
         quint64 requestId
     ) {
-        qDebug() << "已渲染" << pageNumber;
+        (void)QtConcurrent::run([this, pageNumber, image]() {
+            QImage finalImage(image.size(), QImage::Format_ARGB32_Premultiplied);
+            finalImage.fill(Qt::white); // 先填充背景
+            QPainter painter(&finalImage);
+            painter.setRenderHint(QPainter::TextAntialiasing, true); // 启用抗锯齿
+            painter.drawImage(0, 0, image);
+            painter.end();
 
-        // 无需担心析构, QCache会处理好的
-        _imageCache.insert(pageNumber, new QPixmap(QPixmap::fromImage(image)));
+            auto* pixmap = new QPixmap(QPixmap::fromImage(finalImage.scaled(
+                finalImage.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation))
+            );
 
-        // 触发 UI 更新
-        // 告诉 Model 第 pageNumber 行有更新, 其内部会调用 data() 进行渲染,
-        // 此时 _imageCache.contains(pageNumber) 为 true
-        emit dataChanged(index(pageNumber), index(pageNumber), {Qt::DecorationRole});
-        
-        _pendingLoads.remove(pageNumber);
+            QMetaObject::invokeMethod(this,
+                [this, pageNumber, pixmap]() {
+                // 无需担心析构, QCache会处理好的
+                _imageCache.insert(pageNumber, pixmap);
+                // 触发 UI 更新
+                // 告诉 Model 第 pageNumber 行有更新, 其内部会调用 data() 进行渲染,
+                // 此时 _imageCache.contains(pageNumber) 为 true
+                emit dataChanged(index(pageNumber), index(pageNumber), {Qt::DecorationRole});
+                _pendingLoads.remove(pageNumber);
+            });
+        });
     });
 
     // 页数变化 todo !!!以后改为根据状态!!!
@@ -71,7 +84,6 @@ QVariant LazyPdfModel::data(const QModelIndex& index, int role) const {
 void LazyPdfModel::preloadVisibleArea(int start, int end, int margin) {
     start = qMax(0, start - margin);
     end = qMin(rowCount() - 1, end + margin);
-    qDebug() << "渲染" << start << "~" << end;
     for (int i = start; i <= end; ++i) {
         if (!_imageCache.contains(i)) {
             loadImage(i);
@@ -91,13 +103,17 @@ void LazyPdfModel::loadImage(int row) {
     h *= _zoomFactor;
 
     // 加入渲染队列
-    qDebug() << "渲染中:" << row;
     QPdfDocumentRenderOptions opt;
+
+    QSize originalSize = {static_cast<int>(w), static_cast<int>(h)};  // 获取 PDF 页面的原始尺寸（像素）
+    // QSize highDpiSize = originalSize * (300.0 / 72.0);     // 按 300 DPI 计算目标尺寸
+
+    // opt.setScaledSize(highDpiSize);
     opt.setRenderFlags(QPdfDocumentRenderOptions::RenderFlag::Annotations); // 渲染 PDF 注释
     
     _renderer->requestPage(
         row,
-        QSize{static_cast<int>(w), static_cast<int>(h)},
+        originalSize,
         opt
     );
 }
