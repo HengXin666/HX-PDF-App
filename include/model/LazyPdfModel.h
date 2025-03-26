@@ -53,12 +53,16 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DecorationRole) const override;
 
     /**
-     * @brief 预加载当前可视区域 (带一定的边界)
+     * @brief 预加载当前可视区域 (带一定的边界) [start, end + margin]
      * @param start 
      * @param end 
-     * @param margin 边距
+     * @param margin 预加载偏移
      */
-    void preloadVisibleArea(int start, int end, int margin = 10);
+    void preloadVisibleArea(int start, int end, int margin = 1);
+
+    void updateVisibleRange(int start, int end, int margin = 1) {
+        _visibleRange = {start, end};
+    }
 
     void setScaleFactor(double factor) {
         _zoomFactor = factor;
@@ -91,6 +95,9 @@ private:
     mutable QCache<int, QPixmap> _imageCache;
     QSet<int> _pendingLoads;
     QPdfPageRenderer* _renderer;
+    struct VisibleRange {
+        int l, r;
+    } _visibleRange{0, 0};
 };
 
 } // namespace HX

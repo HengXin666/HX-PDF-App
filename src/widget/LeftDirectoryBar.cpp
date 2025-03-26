@@ -42,8 +42,8 @@ LeftDirectoryBar::LeftDirectoryBar(int w, PdfView* pdfView, QWidget* parent)
 
     // 创建书签模型, 并设置到书签视图
     auto* bookmodel = new QPdfBookmarkModel;
-    bookmodel->setDocument(pdfView->_pdfDocument);
-    bookView->setModel(bookmodel);
+    // bookmodel->setDocument(pdfView->_pdfDocument);
+    // bookView->setModel(bookmodel);
 
     // 图片视图
     auto* imgView = new QListView{this};
@@ -60,7 +60,7 @@ LeftDirectoryBar::LeftDirectoryBar(int w, PdfView* pdfView, QWidget* parent)
     imgView->setResizeMode(QListView::Adjust);
     
     // 设置图片视图的模型
-    imgView->setModel(pdfView->_pdfDocument->pageModel());
+    // imgView->setModel(pdfView->_pdfDocument->pageModel());
     imgView->setItemAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     
     // 点击树状列表目录事件

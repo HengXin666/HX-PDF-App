@@ -14,7 +14,7 @@ LazyPdfModel::LazyPdfModel(QPdfDocument* document, QObject* parent)
     , _renderer(new QPdfPageRenderer{this})
 {
     _renderer->setDocument(document);
-    
+
     // 设置为: 所有页面都在单独的工作线程中渲染
     _renderer->setRenderMode(QPdfPageRenderer::RenderMode::MultiThreaded);
 
@@ -61,25 +61,30 @@ QVariant LazyPdfModel::data(const QModelIndex& index, int role) const {
         return *_imageCache.object(row);
     
     // 异步加载图片
-    const_cast<LazyPdfModel*>(this)->loadImage(row);
+    // 优化: 仅当行索引在可视范围+一定预加载范围内, 才触发 loadImage()
+    if (_visibleRange.l <= row && row <= _visibleRange.r) {
+        const_cast<LazyPdfModel*>(this)->loadImage(row);
+    }
     return _placeholder;
 }
 
 void LazyPdfModel::preloadVisibleArea(int start, int end, int margin) {
     start = qMax(0, start - margin);
     end = qMin(rowCount() - 1, end + margin);
+    qDebug() << "渲染" << start << "~" << end;
     for (int i = start; i <= end; ++i) {
-        if (!_imageCache.contains(i) && !_pendingLoads.contains(i))
+        if (!_imageCache.contains(i)) {
             loadImage(i);
+        }
     }
 }
 
 void LazyPdfModel::loadImage(int row) {
+    if (_cnt == 0 || _pendingLoads.contains(row))
+        return;
+
     // 记录正在加载的图片, 防止重复加载
     _pendingLoads.insert(row);
-
-    if (_cnt == 0)
-        return;
 
     auto [w, h] = _baseSize;
     w *= _zoomFactor;

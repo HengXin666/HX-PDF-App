@@ -132,8 +132,6 @@ HX::PdfView::PdfView(QWidget* parent)
         _pdfView->setZoomFactor(zoomFactor);
     });
 
-    // auto* nav = _pdfView->pageNavigator();
-
     // 滚动后触发 更新当前页面
     connect(_pdfView->verticalScrollBar(), &QScrollBar::valueChanged, this,
         [this](int value) {
@@ -158,22 +156,19 @@ HX::PdfView::PdfView(QWidget* parent)
     contentLayout->setSpacing(0);
     contentLayout->setContentsMargins(0, 0, 0, 0);
 
-
     // === pdf 渲染设置 ===
 
     // pdf 预览
     _pdfView->setUniformItemSizes(true);
     _pdfView->setVerticalScrollMode(QListView::ScrollPerPixel);
 
-    // _pdfView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
     auto* pdfModel = new LazyPdfModel{_pdfDocument, _pdfView};
     _pdfView->setModel(pdfModel);
     _pdfView->setItemDelegate(new VerticalPdfDelegate{pdfModel, _pdfView});
 
     // 去掉边距
-    // _pdfView->setContentsMargins(0, 0, 0, 0);
-    // _pdfView->viewport()->setContentsMargins(0, 0, 0, 0);
+    _pdfView->setContentsMargins(0, 0, 0, 0);
+    _pdfView->viewport()->setContentsMargins(0, 0, 0, 0);
     contentLayout->addWidget(_pdfView);
 
     layout->addWidget(mainContentWidget);
@@ -182,13 +177,27 @@ HX::PdfView::PdfView(QWidget* parent)
     connect(_pdfView, &PdfListView::scaleChanged,
             pdfModel, &LazyPdfModel::setScaleFactor);
     
-    // 预加载
-    auto updateVisibleArea = [this, pdfModel]() {
+    auto lambda = [this, pdfModel](){
         QRect viewportRect = _pdfView->viewport()->rect();
         int rowHeight = pdfModel->getSize().height();
         int startRow = _pdfView->verticalScrollBar()->value() / rowHeight;
         int endRow = (_pdfView->verticalScrollBar()->value() + viewportRect.height()) / rowHeight;
-        pdfModel->preloadVisibleArea(startRow, endRow);
+        if (endRow - startRow < 3) {
+            pdfModel->updateVisibleRange(startRow, endRow);
+            pdfModel->preloadVisibleArea(startRow, endRow);
+        }
+    };
+
+    // 渲染当前可见的部分, 使用计时器防抖, 即如果快速拖动, 不会直接渲染这之间的内容, 而是等待滑动慢下来, 才渲染
+    auto updateVisibleArea = [this, pdfModel, lambda, 
+    timer = [this, lambda]{
+        auto* resTimer = new QTimer{this};
+        resTimer->setSingleShot(true); // 只能触发一次
+        connect(resTimer, &QTimer::timeout, this, lambda);
+        return resTimer;
+    }()]() mutable {
+        timer->stop();
+        timer->start(200);
     };
 
     // 跟随渲染可见之处
