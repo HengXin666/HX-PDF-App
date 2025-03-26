@@ -23,7 +23,7 @@ void VerticalPdfDelegate::paint(
     // 直接使用 预缩放的 QPixmap
     QRect targetRect = option.rect;
 
-    // 计算居中位置（但不再重新缩放）
+    // 计算居中位置 (但不再重新缩放)
     if (targetRect.width() > pix.width()) {  
         int xOffset = (targetRect.width() - pix.width()) / 2;
         targetRect.setX(targetRect.x() + xOffset);
