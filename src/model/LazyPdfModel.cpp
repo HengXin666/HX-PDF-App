@@ -92,7 +92,14 @@ void LazyPdfModel::loadImage(int row) {
 
     // 加入渲染队列
     qDebug() << "渲染中:" << row;
-    _renderer->requestPage(row, QSize{static_cast<int>(w), static_cast<int>(h)});
+    QPdfDocumentRenderOptions opt;
+    opt.setRenderFlags(QPdfDocumentRenderOptions::RenderFlag::Annotations); // 渲染 PDF 注释
+    
+    _renderer->requestPage(
+        row,
+        QSize{static_cast<int>(w), static_cast<int>(h)},
+        opt
+    );
 }
 
 } // namespace HX

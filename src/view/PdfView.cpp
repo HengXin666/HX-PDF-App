@@ -30,6 +30,18 @@ HX::PdfView::PdfView(QWidget* parent)
 
         (可能的侧边栏)       <pdf预览>
     */
+    auto* pdfModel = new LazyPdfModel{_pdfDocument, _pdfView};
+
+    // 渲染当前可见部分
+    auto updateVisibleArea = [this, pdfModel](){
+        QRect viewportRect = _pdfView->viewport()->rect();
+        int rowHeight = pdfModel->getSize().height();
+        int startRow = _pdfView->verticalScrollBar()->value() / rowHeight;
+        int endRow = (_pdfView->verticalScrollBar()->value() + viewportRect.height()) / rowHeight;
+        pdfModel->updateVisibleRange(startRow, endRow);
+        pdfModel->preloadVisibleArea(startRow, endRow);
+    };
+
     auto* layout = new QVBoxLayout{this};
     layout->setContentsMargins(0, 0, 0, 0); // 设置布局为无边距
 
@@ -92,19 +104,24 @@ HX::PdfView::PdfView(QWidget* parent)
     topLayout->addStretch();
 
     // 放大
-    connect(btnZoomIn, &QPushButton::clicked, this, [this](){
+    connect(btnZoomIn, &QPushButton::clicked, this,
+        [this, updateVisibleArea](){
         qreal cdelta = _pdfView->zoomFactor();
         _pdfView->setZoomFactor(cdelta * 1.1);
+        updateVisibleArea();
     });
 
     // 缩小
-    connect(btnZoomOut, &QPushButton::clicked, this, [this](){
+    connect(btnZoomOut, &QPushButton::clicked, this,
+        [this, updateVisibleArea](){
         qreal cdelta = _pdfView->zoomFactor();
         _pdfView->setZoomFactor(cdelta * 0.9);
+        updateVisibleArea();
     });
 
     // 自适应
-    connect(btnFit, &QPushButton::clicked, this, [this](){
+    connect(btnFit, &QPushButton::clicked, this,
+        [this, updateVisibleArea](){
         if (!_pdfDocument|| _pdfDocument->pageCount() == 0) 
             return;
         // 参考: https://forum.qt.io/topic/157002/qpdfview-why-doessn-t-this-work/3
@@ -130,9 +147,10 @@ HX::PdfView::PdfView(QWidget* parent)
         qreal zoomFactor = (viewportWidth * safetyMargin) / pageWidthPx;
 
         _pdfView->setZoomFactor(zoomFactor);
+        updateVisibleArea();
     });
 
-    // 滚动后触发 更新当前页面
+    // 滚动后触发 更新当前页面的页码
     connect(_pdfView->verticalScrollBar(), &QScrollBar::valueChanged, this,
         [this](int value) {
         _currentPage->setText(QString{"%1"}.arg(_pdfView->getVisibleIndex() + 1));
@@ -159,10 +177,9 @@ HX::PdfView::PdfView(QWidget* parent)
     // === pdf 渲染设置 ===
 
     // pdf 预览
-    _pdfView->setUniformItemSizes(true);
-    _pdfView->setVerticalScrollMode(QListView::ScrollPerPixel);
-
-    auto* pdfModel = new LazyPdfModel{_pdfDocument, _pdfView};
+    _pdfView->setUniformItemSizes(false); // 允许不同项高度
+    _pdfView->setVerticalScrollMode(QListView::ScrollPerPixel); // *用像素滚动
+    // _pdfView->setViewportUpdateMode(QListView::FullViewportUpdate);
     _pdfView->setModel(pdfModel);
     _pdfView->setItemDelegate(new VerticalPdfDelegate{pdfModel, _pdfView});
 
@@ -177,23 +194,12 @@ HX::PdfView::PdfView(QWidget* parent)
     connect(_pdfView, &PdfListView::scaleChanged,
             pdfModel, &LazyPdfModel::setScaleFactor);
     
-    auto lambda = [this, pdfModel](){
-        QRect viewportRect = _pdfView->viewport()->rect();
-        int rowHeight = pdfModel->getSize().height();
-        int startRow = _pdfView->verticalScrollBar()->value() / rowHeight;
-        int endRow = (_pdfView->verticalScrollBar()->value() + viewportRect.height()) / rowHeight;
-        if (endRow - startRow < 3) {
-            pdfModel->updateVisibleRange(startRow, endRow);
-            pdfModel->preloadVisibleArea(startRow, endRow);
-        }
-    };
-
     // 渲染当前可见的部分, 使用计时器防抖, 即如果快速拖动, 不会直接渲染这之间的内容, 而是等待滑动慢下来, 才渲染
-    auto updateVisibleArea = [this, pdfModel, lambda, 
-    timer = [this, lambda]{
+    auto updateVisibleAreaWrap = [this, pdfModel, updateVisibleArea, 
+        timer = [this, updateVisibleArea]{
         auto* resTimer = new QTimer{this};
         resTimer->setSingleShot(true); // 只能触发一次
-        connect(resTimer, &QTimer::timeout, this, lambda);
+        connect(resTimer, &QTimer::timeout, this, updateVisibleArea);
         return resTimer;
     }()]() mutable {
         timer->stop();
@@ -201,10 +207,11 @@ HX::PdfView::PdfView(QWidget* parent)
     };
 
     // 跟随渲染可见之处
-    connect(_pdfView->verticalScrollBar(), &QScrollBar::valueChanged, updateVisibleArea);
+    connect(_pdfView->verticalScrollBar(), &QScrollBar::valueChanged,
+            this, updateVisibleAreaWrap);
 
     // 定时预渲染
-    QTimer::singleShot(500, updateVisibleArea);
+    QTimer::singleShot(500, updateVisibleAreaWrap);
 
     // === 侧边栏 === {
     _leftDirectoryBar = new HX::LeftDirectoryBar{200, this, mainContentWidget};
