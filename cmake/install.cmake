@@ -53,20 +53,37 @@ target_link_libraries(${projectName} PRIVATE Qt::Network)
 
 # 第三方依赖 (qpdf)
 if (WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/lib/qpdf")
-    find_package(qpdf CONFIG REQUIRED)
-    target_link_libraries(${projectName} PRIVATE qpdf::libqpdf)
+    # 不用这个库
+    if(FALSE)
+        list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/lib/qpdf")
+        find_package(qpdf CONFIG REQUIRED)
+        target_link_libraries(${projectName} PRIVATE qpdf::libqpdf)
 
-    # 获取 qpdf 库的 DLL 文件路径
-    get_target_property(QPDF_LIB_DIR qpdf::libqpdf LOCATION)
-    get_filename_component(QPDF_DLL_PATH ${QPDF_LIB_DIR} DIRECTORY)
-    set(QPDF_DLL ${QPDF_DLL_PATH}/qpdf30.dll)
+        # 获取 qpdf 库的 DLL 文件路径
+        get_target_property(QPDF_LIB_DIR qpdf::libqpdf LOCATION)
+        get_filename_component(QPDF_DLL_PATH ${QPDF_LIB_DIR} DIRECTORY)
+        set(QPDF_DLL ${QPDF_DLL_PATH}/qpdf30.dll)
 
-    # 将 DLL 复制到可执行文件的目录
-    add_custom_command(TARGET ${projectName} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${QPDF_DLL} $<TARGET_FILE_DIR:${projectName}>
-    )
+        # 将 DLL 复制到可执行文件的目录
+        add_custom_command(TARGET ${projectName} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${QPDF_DLL} $<TARGET_FILE_DIR:${projectName}>
+        )
+    endif()
+    
+    if(TRUE)
+        include_directories("${PROJECT_SOURCE_DIR}/lib/mupdf/include")
+        if (CMAKE_BUILD_TYPE STREQUAL "Release")
+            target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Release/libmupdf.lib")
+            target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Release/libthirdparty.lib")
+            target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Release/libresources.lib")
+        else()
+            target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Debug/libmupdf.lib")
+            target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Debug/libthirdparty.lib")
+            target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Debug/libresources.lib")
+        endif()
+        
+    endif()
 else()
     find_package(qpdf CONFIG REQUIRED)
     target_link_libraries(${projectName} PRIVATE qpdf::libqpdf)
