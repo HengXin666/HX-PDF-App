@@ -39,7 +39,9 @@ struct StreamState {
         _in.seekg(offset, whence);
     }
 
-    unsigned char buf[4096]{};
+    inline static constexpr std::size_t MaxBufSize = 4096;
+
+    unsigned char buf[MaxBufSize]{};
 
     ~StreamState() noexcept {
         _in.close();
@@ -57,7 +59,7 @@ struct StreamState {
  */
 int streamNext(fz_context* ctx, fz_stream* stm, size_t max) {
     auto* sp = (StreamState*)stm->state;
-    int res = sp->read(max);
+    int res = sp->read(std::min(max, StreamState::MaxBufSize));
     if (res == 0 && sp->isEof()) {
         return -1;
     }
@@ -108,7 +110,8 @@ struct MupdfRaii {
         _stream->seek = streamSeek;
         fz_register_document_handlers(_ctx);
         fz_try(_ctx) {
-            _doc = fz_open_document_with_stream(_ctx, ".pdf", _stream);
+            _doc = fz_open_document_with_stream(_ctx, filePath, _stream);
+            // _doc = fz_open_document(_ctx, filePath);
             int page_count = fz_count_pages(_ctx, _doc);
             qDebug() << "页数:" << page_count;
             fz_drop_document(_ctx, _doc);
@@ -127,10 +130,12 @@ struct MupdfRaii {
     fz_context* _ctx;
     StreamState _ss;
     fz_stream* _stream;
-    fz_document* _doc;
+    fz_document* _doc{};
 };
 
 int main() {
-    const char* filename = "D:/command/Github/HX-PDF-App/TestPdfSrc/C++-Templates-The-Complete-Guide-zh-20220903.pdf";
-    MupdfRaii pdf{filename};
+    const char* filename1 = "D:/command/Github/HX-PDF-App/TestPdfSrc/C++-Templates-The-Complete-Guide-zh-20220903.pdf";
+    const char* filename2 = "D:/command/Github/HX-PDF-App/TestPdfSrc/imouto.epub";
+    MupdfRaii pdf1{filename1};
+    MupdfRaii pdf2{filename2};
 }
