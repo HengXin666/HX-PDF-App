@@ -82,7 +82,6 @@ if (WIN32)
             target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Debug/libthirdparty.lib")
             target_link_libraries(${projectName} PRIVATE "${PROJECT_SOURCE_DIR}/lib/mupdf/lib/Debug/libresources.lib")
         endif()
-        
     endif()
 else()
     find_package(qpdf CONFIG REQUIRED)
