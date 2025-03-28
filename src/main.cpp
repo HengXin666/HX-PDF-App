@@ -14,6 +14,8 @@ int _1main(int argc, char* argv[]) {
 
 #include <mupdf/pdf.h>
 
+#include <mu/Document.h>
+
 struct StreamState {
     explicit StreamState(const char* filePath)
         : _in(std::ifstream{filePath, std::ios::in | std::ios::binary})
@@ -101,83 +103,32 @@ void streamDrop(fz_context* ctx, void* state) {
     qDebug() << "raii";
 }
 
-// bui 流
 
-struct BuildMuStream {
-    using NextFunPtr = int (*)(fz_context* ctx, fz_stream* stm, size_t max);
-    using DropFunPtr = void (*)(fz_context* ctx, void* state);
-    using SeekFunPtr = void (*)(fz_context* ctx, fz_stream* stm, int64_t offset, int whence);
-
-    BuildMuStream(
-        NextFunPtr next,
-        DropFunPtr drop,
-        SeekFunPtr seek
-    )
-        : _next(next)
-        , _drop(drop)
-        , _seek(seek)
+struct MuPdf : public HX::Mu::Document {
+    explicit MuPdf(const char* filePath)
+        : HX::Mu::Document(filePath)
+        , _ss(filePath)
     {}
 
-    NextFunPtr _next;
-    DropFunPtr _drop;
-    SeekFunPtr _seek;
-};
 
-struct MuPdf {
-    explicit MuPdf(const char* filePath)
-        : _ctx(fz_new_context(nullptr, nullptr, FZ_STORE_DEFAULT))
-        , _ss(filePath)
-        , _stream()
-    {
-        fz_register_document_handlers(_ctx);
-    }
-
-    MuPdf& setStream(BuildMuStream const& bui) {
-        _stream = fz_new_stream(_ctx, &_ss, bui._next, bui._drop);
-        _stream->seek = bui._seek;
+    Document& setStream(HX::Mu::StreamFuncBuilder const& builder) override {
+        _stream = fz_new_stream(_ctx, &_ss, builder._next, builder._drop);
+        _stream->seek = builder._seek;
         return *this;
     }
 
-    void buildDocument(const char* magic) {
-        fz_try(_ctx) {
-            _doc = fz_open_document_with_stream(_ctx, magic, _stream);
-        } fz_catch(_ctx) {
-            throw std::runtime_error{fz_caught_message(_ctx)};
-        }
-    }
+    ~MuPdf() noexcept override {
 
-    int pageCnt() {
-        int page_count = -1;
-        fz_try(_ctx) {
-            page_count = fz_count_pages(_ctx, _doc);
-            qDebug() << "页数:" << page_count;
-        } fz_catch(_ctx) {
-            throw std::runtime_error{fz_caught_message(_ctx)};
-        }
-        return page_count;
-    }
-
-    ~MuPdf() noexcept {
-        fz_drop_document(_ctx, _doc);
-        fz_drop_stream(_ctx, _stream);
-        fz_drop_context(_ctx);
     }
 
 private:
-    // 禁止拷贝赋值和拷贝构造
-    MuPdf(MuPdf const&) = delete;
-    MuPdf& operator=(MuPdf const&) = delete;
-
-    fz_context* _ctx;
     StreamState _ss;
-    fz_stream* _stream;
-    fz_document* _doc;
 };
 
 int main() {
     const char* filename1 = "D:/command/Github/HX-PDF-App/TestPdfSrc/C++-Templates-The-Complete-Guide-zh-20220903.pdf";
     const char* filename2 = "D:/command/Github/HX-PDF-App/TestPdfSrc/imouto.epub";
-    auto bs = BuildMuStream{
+    auto bs = HX::Mu::StreamFuncBuilder{
         [](fz_context* ctx, fz_stream* stm, size_t max) ->int {
             auto* sp = (StreamState*)stm->state;
             int res = sp->read(std::min(max, StreamState::MaxBufSize));
@@ -210,7 +161,7 @@ int main() {
     };
     MuPdf pdf1{filename1};
     pdf1.setStream(bs).buildDocument(".pdf");
-    pdf1.pageCnt();
+    qDebug() << "页码:" << pdf1.pageCount();
 
     MuPdf pdf2{filename2};
     pdf2.setStream({
@@ -218,5 +169,11 @@ int main() {
         streamDrop,
         streamSeek,
     }).buildDocument(".epub");
-    pdf2.pageCnt();
+    qDebug() << "页码:" << pdf2.pageCount();
+    
+    // 测试默认流
+    HX::Mu::Document stdDoc{filename2};
+    stdDoc.setStream({});
+    stdDoc.buildDocument(filename2);
+    qDebug() << "页码: (STD)" << stdDoc.pageCount();
 }

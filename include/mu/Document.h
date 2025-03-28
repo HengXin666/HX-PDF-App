@@ -57,11 +57,13 @@ public:
     int pageCount() const;
 
     virtual ~Document() noexcept;
+
 private:
     // 禁止拷贝赋值和拷贝构造
     Document(Document const&) = delete;
     Document& operator=(Document const&) = delete;
 
+protected:
     fz_context* _ctx;
     fz_stream* _stream;
     fz_document* _doc;
