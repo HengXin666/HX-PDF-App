@@ -9,16 +9,12 @@ project(HX-Music
     LANGUAGES CXX
 )
 
-# QT Start
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
-
 set(CMAKE_BUILD_TYPE "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     message("=-=-=-=-=-=-=当前是 [Release] 模式=-=-=-=-=-=-=")
 else()
     message("=-=-=-=-=-=-=当前是 [DEBUG] 模式=-=-=-=-=-=-=")
+    add_definitions(-D_HX_DEBUG_) # 添加一个 _HX_DEBUG_ 宏
 endif()
 
 # 加载依赖
