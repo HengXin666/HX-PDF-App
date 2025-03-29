@@ -126,8 +126,8 @@ private:
 };
 
 int main() {
-    const char* filename1 = "D:/command/Github/HX-PDF-App/TestPdfSrc/C++-Templates-The-Complete-Guide-zh-20220903.pdf";
-    const char* filename2 = "D:/command/Github/HX-PDF-App/TestPdfSrc/imouto.epub";
+    const char* filename1 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/C++-Templates-The-Complete-Guide-zh-20220903.pdf";
+    const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
     auto bs = HX::Mu::StreamFuncBuilder{
         [](fz_context* ctx, fz_stream* stm, size_t max) ->int {
             auto* sp = (StreamState*)stm->state;

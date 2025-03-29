@@ -1,7 +1,15 @@
 # HX-PDF-App
 
+## 项目结构说明
+
+```sh
+.
+|- cpp-backend # C++后端
+|- qt-client   # Qt 客户端
+```
+
 ## 环境搭建
-### 一、Win系统配置
+### 一、Win系统配置 (Qt客户端)
 
 1. 安装`vcpkg`, 以后可能会用到.
 
@@ -33,3 +41,7 @@ endif()
 ```
 
 5. 尝试编译, 如果不行, 请喷qt、vcpkg、msvc, 以及疯狂喷win系统, 然后屁颠屁颠去使用linux!
+
+### 二、Linux配置 (C++后端)
+
+项目基于 [HXLibs](https://github.com/HengXin666/HXLibs) 作为后端框架, 其需要运行在 Linux 下.
