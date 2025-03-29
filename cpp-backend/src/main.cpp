@@ -1,5 +1,12 @@
 #include <HXWeb/HXApi.hpp>
 
+#include <HXJson/JsonWrite.hpp>
+#include <HXJson/JsonRead.hpp>
+
+struct ServerConfig {
+    std::string pdfPath;
+} serverConfig;
+
 class PdfTestController {
     ROUTER
         .on<GET>("/", [] ENDPOINT {
@@ -12,7 +19,7 @@ class PdfTestController {
             PARSE_MULTI_LEVEL_PARAM(uwp);
             try {
                 // todo: 需要补充完整路径!
-                co_await res.useRangeTransferFile(uwp);
+                co_await res.useRangeTransferFile(serverConfig.pdfPath + uwp);
             } catch (std::exception const& ec) {
                 RESPONSE_DATA(500, html, "<h1>文件不存在!</h1>");
                 LOG_ERROR(ec.what());
@@ -21,7 +28,32 @@ class PdfTestController {
     ROUTER_END;
 };
 
+#include <fstream>
+#include <filesystem>
+
 int main() {
+    {
+        try {
+            auto cwd = std::filesystem::current_path();
+            std::cout << "当前工作路径是: " << cwd << '\n';
+            std::filesystem::current_path("../cpp-backend/config");
+            std::cout << "切换到配置文件路径: " << std::filesystem::current_path() << '\n';
+        
+            std::ifstream is{"server.json", std::ios::in};
+
+            std::string buf;
+            buf.resize(1024);
+            
+            is.read(buf.data(), 114514);
+            HX::json::fromJson(serverConfig, buf);
+            HX::print::println("服务器配置已加载: ", serverConfig);
+
+            std::filesystem::current_path(serverConfig.pdfPath);
+            std::cout << "当前路径: " << std::filesystem::current_path() << '\n';
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Error: " << e.what() << '\n';
+        }
+    }
     setlocale(LC_ALL, "zh_CN.UTF-8");
     ROUTER_BIND(PdfTestController);
     // 启动Http服务 [阻塞于此]

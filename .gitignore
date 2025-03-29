@@ -15,6 +15,9 @@ lib/mupdf/lib/**
 # clangl
 .cache/**
 
+# 服务器文件数据
+pdf-data/**
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
