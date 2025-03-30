@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(projectName "HX-PDF-Server")
 
-project(HX-Music
+project(${projectName}
     VERSION 0.0.1
     DESCRIPTION ${projectName}
     HOMEPAGE_URL "https://github.com/HengXin666/HX-PDF-App"

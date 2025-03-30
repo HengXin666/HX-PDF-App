@@ -20,16 +20,34 @@
 #ifndef _HX_PAGE_H_
 #define _HX_PAGE_H_
 
+#include <QImage>
+
+struct fz_page;
+struct fz_display_list;
+
 namespace HX::Mu {
 
 class Document;
 
 class Page {
 public:
-    explicit Page(Document const& doc) noexcept;
-    
+    explicit Page(Document const& doc, int index) noexcept;
+
+    /**
+     * @brief 获取页面大小 (72 dpi)
+     * 
+     * @return QSizeF 
+     */
+    QSizeF size() const;
+
+    QImage renderImage(float scaleX = 1.0f, float scaleY = 1.0f, float rotation = 0.0f) const;
+
+    ~Page() noexcept;
 private:
     Document const& _doc;
+
+    fz_page* _page;
+    fz_display_list* _displayList;
 };
 
 } // namespace HX::Mu

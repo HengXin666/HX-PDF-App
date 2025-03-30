@@ -32,7 +32,7 @@ void Document::buildDocument(const char* filePath) {
     }
 }
 
-int Document::pageCount() {
+int Document::pageCount() const {
     if (_pageCnt != -1) {
         return _pageCnt;
     }
@@ -45,7 +45,7 @@ int Document::pageCount() {
 }
 
 std::shared_ptr<Page> Document::page(int index) {
-    if (!_doc || index < 0 || pageCount() >= _pageCnt) [[unlikely]] {
+    if (!_doc || index < 0 || index >= _pageCnt) [[unlikely]] {
         throw _doc 
             ? std::runtime_error{"Page number is illegal."} 
             : std::runtime_error{"Please load the document first."};
@@ -54,7 +54,7 @@ std::shared_ptr<Page> Document::page(int index) {
     if (res) {
         return res;
     }
-    return res = std::make_shared<Page>(*this);
+    return res = std::make_shared<Page>(*this, index);
 }
 
 bool Document::needsPassword() const {

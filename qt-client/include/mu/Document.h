@@ -63,7 +63,7 @@ public:
      * @throw std::runtime_error
      * @return int 总页码数
      */
-    int pageCount();
+    int pageCount() const;
 
     /**
      * @brief 获取第 index 页
@@ -101,6 +101,28 @@ public:
     QDateTime creationDate() const;
     QDateTime modDate() const;
 
+    /**
+     * @brief 设置背景是否透明 (默认不透明 = false)
+     * @param transparent 
+     */
+    void setTransparent(bool transparent) {
+        _transparent = transparent;
+    }
+
+    /**
+     * @brief 设置背景颜色
+     * @param r 
+     * @param g 
+     * @param b 
+     * @param a 透明通道 (alpha) (默认不透明 = 255)
+     */
+    void setBackgroundColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255) {
+        _r = r;
+        _g = g;
+        _b = b;
+        _a = a;
+    }
+
     virtual ~Document() noexcept;
 private:
     // 禁止拷贝赋值和拷贝构造
@@ -116,7 +138,13 @@ private:
     std::map<int, std::shared_ptr<Page>> _pageList;
 
     // 总页码数
-    int _pageCnt = -1;
+    mutable int _pageCnt = -1;
+
+    // 渲染的背景是否透明 (默认不透明)
+    int _transparent = false;
+
+    // 背景颜色 RGBA
+    unsigned char _r = 255, _g = 255, _b = 255, _a = 255;
 protected:
     fz_context* _ctx;
     fz_stream* _stream;

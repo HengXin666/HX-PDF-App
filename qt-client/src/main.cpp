@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <window/MainWindow.h>
 
-int main(int argc, char* argv[]) {
+int _12main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     HX::MainWindow window;
     window.show();
@@ -12,9 +12,12 @@ int main(int argc, char* argv[]) {
 
 #include <fstream>
 
+#include <QLabel>
+
 #include <mupdf/pdf.h>
 
 #include <mu/Document.h>
+#include <mu/Page.h>
 
 struct StreamState {
     explicit StreamState(const char* filePath)
@@ -125,7 +128,9 @@ private:
     StreamState _ss;
 };
 
-int _main() {
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
+
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
     const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
     auto bs = HX::Mu::StreamFuncBuilder{
@@ -175,10 +180,17 @@ int _main() {
     };
 
     infoAll(pdf1);
+    QMainWindow w;
+    
+    MuPdf pdf2{filename2};
+    pdf2.setStream(bs).buildDocument(".epub");
+    qDebug() << "页码:" << pdf2.pageCount();
 
-    HX::Mu::Document pdf2{filename2};
-    pdf2.setStream({}).buildDocument(".epub");
-    infoAll(pdf2);
+    QLabel label;
+    auto img = pdf2.page(0)->renderImage();
+    label.setPixmap(QPixmap::fromImage(img).scaled(800, 600));
+    w.setCentralWidget(&label);
 
-    return 0;
+    w.show();
+    return app.exec();
 }
