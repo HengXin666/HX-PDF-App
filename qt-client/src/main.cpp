@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <window/MainWindow.h>
 
-int _1main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     HX::MainWindow window;
     window.show();
@@ -125,8 +125,8 @@ private:
     StreamState _ss;
 };
 
-int main() {
-    const char* filename1 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/C++-Templates-The-Complete-Guide-zh-20220903.pdf";
+int _main() {
+    const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
     const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
     auto bs = HX::Mu::StreamFuncBuilder{
         [](fz_context* ctx, fz_stream* stm, size_t max) ->int {
@@ -161,19 +161,24 @@ int main() {
     };
     MuPdf pdf1{filename1};
     pdf1.setStream(bs).buildDocument(".pdf");
-    qDebug() << "页码:" << pdf1.pageCount();
 
-    MuPdf pdf2{filename2};
-    pdf2.setStream({
-        streamNext,
-        streamDrop,
-        streamSeek,
-    }).buildDocument(".epub");
-    qDebug() << "页码:" << pdf2.pageCount();
-    
-    // 测试默认流
-    HX::Mu::Document stdDoc{filename2};
-    stdDoc.setStream({});
-    stdDoc.buildDocument(filename2);
-    qDebug() << "页码: (STD)" << stdDoc.pageCount();
+    auto infoAll = [](HX::Mu::Document const& pdf) {
+        qDebug() << "页码:" << pdf.pageCount();
+        qDebug() << "Title:" << pdf.title();
+        qDebug() << "author:" << pdf.author();
+        qDebug() << "subject:" << pdf.subject();
+        qDebug() << "keywords:" << pdf.keywords();
+        qDebug() << "creator:" << pdf.creator();
+        qDebug() << "producer:" << pdf.producer();
+        qDebug() << "creationDate:" << pdf.creationDate();
+        qDebug() << "modDate:" << pdf.modDate();
+    };
+
+    infoAll(pdf1);
+
+    HX::Mu::Document pdf2{filename2};
+    pdf2.setStream({}).buildDocument(".epub");
+    infoAll(pdf2);
+
+    return 0;
 }
