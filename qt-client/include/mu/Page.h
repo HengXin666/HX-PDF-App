@@ -20,6 +20,9 @@
 #ifndef _HX_PAGE_H_
 #define _HX_PAGE_H_
 
+#include <vector>
+
+#include <QFont>
 #include <QImage>
 
 struct fz_page;
@@ -28,6 +31,13 @@ struct fz_display_list;
 namespace HX::Mu {
 
 class Document;
+
+struct TextItem {
+    QString text;  // 文字内容
+    QRectF rect;   // 文字位置
+    QFont font;    // 字体信息
+    QColor color;  // 字体颜色信息
+};
 
 class Page {
 public:
@@ -41,7 +51,7 @@ public:
     QSizeF size() const;
 
     /**
-     * @brief 将页面渲染到QImage
+     * @brief 将页面渲染到QImage (包含绘图 和 文本)
      * @param scaleX X方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
      * @param scaleY Y方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
      * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
@@ -49,9 +59,21 @@ public:
      */
     QImage renderImage(float scaleX = 1.0f, float scaleY = 1.0f, float rotation = 0.0f) const;
 
+    /**
+     * @brief 将页面渲染到QImage (仅渲染绘图, 不包含文本)
+     * @param scaleX X方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
+     * @param scaleY Y方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
+     * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
+     * @return QImage 如果失败, 则返回空的 QImage
+     */
+    QImage renderOnlyDraw(float scaleX = 1.0f, float scaleY = 1.0f, float rotation = 0.0f) const;
+
+    std::vector<TextItem> testGetText() const;
+
     ~Page() noexcept;
 private:
     Document const& _doc;
+    mutable std::vector<TextItem> _textItems;
 
     fz_page* _page;
     fz_display_list* _displayList;

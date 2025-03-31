@@ -128,6 +128,46 @@ private:
     StreamState _ss;
 };
 
+class TextRenderWidget : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit TextRenderWidget(QWidget *parent = nullptr);
+    void setTextItems(const std::vector<HX::Mu::TextItem>& items); // 设置文本数据
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    std::vector<HX::Mu::TextItem> textItems; // 存储文本
+};
+
+TextRenderWidget::TextRenderWidget(QWidget *parent) : QWidget(parent) {}
+
+void TextRenderWidget::setTextItems(const std::vector<HX::Mu::TextItem>& items) {
+    textItems = items;
+    update(); // 触发重绘
+}
+
+#include <QPainter>
+
+void TextRenderWidget::paintEvent(QPaintEvent *event) {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+
+    // 设置背景
+    painter.fillRect(rect(), Qt::white);
+
+    // 绘制文本
+    for (auto& item : textItems) {
+        painter.setFont(item.font);
+        painter.setPen(item.color);
+        painter.drawRect(item.rect);
+        painter.drawText(item.rect, item.text);
+    }
+}
+
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
@@ -182,17 +222,37 @@ int main(int argc, char* argv[]) {
     infoAll(pdf1);
     QMainWindow w;
     
-    MuPdf pdf2{filename2};
-    pdf2.setStream(bs).buildDocument(".epub");
-    qDebug() << "页码:" << pdf2.pageCount();
+    // MuPdf pdf2{filename2};
+    // pdf2.setStream(bs).buildDocument(".epub");
+    // qDebug() << "页码:" << pdf2.pageCount();
 
-    QLabel label;
-    auto img = pdf2.page(10)->renderImage(1.25, 1.25);
-    label.setPixmap(QPixmap::fromImage(img));
-    label.setFixedSize(img.size());
-    w.setCentralWidget(&label);
-    w.setFixedSize(img.size());
+    // QLabel label;
+    // auto img = pdf1.page(10)->renderOnlyDraw(1, 1);
+    // label.setPixmap(QPixmap::fromImage(img));
+    // label.setFixedSize(img.size());
+    // w.setCentralWidget(&label);
+    // w.setFixedSize(img.size());
 
-    w.show();
+    // qDebug() << pdf1.page(10)->testGetText();
+
+    // w.show();
+
+    QMainWindow mainWindow;
+    auto *renderWidget = new TextRenderWidget();
+
+    // 这里是模拟数据，实际应从 testGetText() 获取
+    std::vector<HX::Mu::TextItem> items = {
+        {"你好", QRectF(10, 20, 40, 20), QFont("SimSun", 12)},
+        {"Qt", QRectF(60, 20, 20, 20), QFont("Arial", 12)},
+    };
+    
+    renderWidget->setTextItems(pdf1.page(10)->testGetText());
+
+    mainWindow.setCentralWidget(renderWidget);
+    mainWindow.resize(800, 600);
+    mainWindow.show();
+
     return app.exec();
 }
+
+#include "main.moc"
