@@ -151,20 +151,17 @@ void TextRenderWidget::setTextItems(const std::vector<HX::Mu::TextItem>& items) 
 
 #include <QPainter>
 
-void TextRenderWidget::paintEvent(QPaintEvent *event) {
+void TextRenderWidget::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::TextAntialiasing);
-
-    // 设置背景
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
     painter.fillRect(rect(), Qt::white);
 
-    // 绘制文本
-    for (auto& item : textItems) {
+    for (const auto& item : textItems) {
         painter.setFont(item.font);
         painter.setPen(item.color);
         painter.drawRect(item.rect);
-        painter.drawText(item.rect, item.text);
+        QPointF baselinePos = item.origin;  // 基线位置
+        painter.drawText(baselinePos, item.text);
     }
 }
 
@@ -222,8 +219,8 @@ int main(int argc, char* argv[]) {
     infoAll(pdf1);
     QMainWindow w;
     
-    // MuPdf pdf2{filename2};
-    // pdf2.setStream(bs).buildDocument(".epub");
+    MuPdf pdf2{filename2};
+    pdf2.setStream(bs).buildDocument(".epub");
     // qDebug() << "页码:" << pdf2.pageCount();
 
     // QLabel label;

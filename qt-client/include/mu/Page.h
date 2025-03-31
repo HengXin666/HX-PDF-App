@@ -34,9 +34,10 @@ class Document;
 
 struct TextItem {
     QString text;  // 文字内容
-    QRectF rect;   // 文字位置
+    QRectF rect;   // 文字矩形区域
     QFont font;    // 字体信息
     QColor color;  // 字体颜色信息
+    QPointF origin; // 文字的基线起点（origin）
 };
 
 class Page {

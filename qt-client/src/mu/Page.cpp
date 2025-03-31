@@ -256,57 +256,64 @@ QImage Page::renderOnlyDraw(float scaleX, float scaleY, float rotation) const {
 
 std::vector<TextItem> Page::testGetText() const {
     std::vector<TextItem> textItems;
-    fz_stext_page* text_page = fz_new_stext_page_from_page(_doc._ctx, _page, 0);
+    fz_stext_page* text_page = fz_new_stext_page_from_page(_doc._ctx, _page, nullptr);
     if (!text_page) {
         return textItems;
     }
 
-    for (fz_stext_block* text_block = text_page->first_block;
-         text_block != nullptr; text_block = text_block->next) {
-        if (text_block->type != FZ_STEXT_BLOCK_TEXT) {
+    fz_rect bbox = fz_bound_page(_doc._ctx, _page);
+
+    for (fz_stext_block* text_block = text_page->first_block; text_block; text_block = text_block->next) {
+        if (text_block->type != FZ_STEXT_BLOCK_TEXT) 
             continue;
-        }
 
-        for (fz_stext_line* text_line = text_block->u.t.first_line;
-             text_line != nullptr; text_line = text_line->next) {
-            for (fz_stext_char* text_char = text_line->first_char;
-                 text_char != nullptr; text_char = text_char->next) {
-                // 提取 Unicode 码点
-                const int c = text_char->c;
-                char buffer[8];
-                const int num_bytes = fz_runetochar(buffer, c);
-                if (num_bytes <= 0 || num_bytes > 4) {
-                    continue;
-                }
-                buffer[num_bytes] = '\0';
-                
-                TextItem item;
-                item.text = QString::fromUtf8(buffer);
-                item.rect = QRectF(text_char->quad.ul.x, text_char->quad.ul.y,
-                                    text_char->quad.lr.x - text_char->quad.ul.x,
-                                    text_char->quad.lr.y - text_char->quad.ul.y);
+        for (fz_stext_line* text_line = text_block->u.t.first_line; text_line; text_line = text_line->next) {
+            QString lineText;
+            QRectF lineRect;
+            QFont lineFont;
+            QColor lineColor;
+            QPointF lineOrigin;
 
-                // 解析字体
-                if (text_char->font) {
-                    const char* font_name = fz_font_name(_doc._ctx, text_char->font);
-                    item.font = QFont(QString::fromUtf8(font_name));
-                } else {
-                    item.font = QFont("SimSun"); // 默认字体
-                }
-                item.font.setPointSizeF(text_char->size * 0.75); // 调整大小，防止超出矩形
+            float min_x = FLT_MAX, max_x = -FLT_MAX;
+            float min_y = FLT_MAX, max_y = -FLT_MAX;
 
-                // 解析颜色
-                item.color.setRgb((text_char->argb >> 16) & 0xFF, 
-                                (text_char->argb >> 8) & 0xFF,  
-                                (text_char->argb) & 0xFF,       
-                                (text_char->argb >> 24) & 0xFF);
+            for (fz_stext_char* ch = text_line->first_char; ch; ch = ch->next) {
+                fz_quad quad = ch->quad;
+                // 更新字符的边界
+                min_x = std::min({min_x, quad.ul.x, quad.ur.x, quad.ll.x, quad.lr.x});
+                max_x = std::max({max_x, quad.ul.x, quad.ur.x, quad.ll.x, quad.lr.x});
+                min_y = std::min({min_y, quad.ul.y, quad.ur.y, quad.ll.y, quad.lr.y});
+                max_y = std::max({max_y, quad.ul.y, quad.ur.y, quad.ll.y, quad.lr.y});
 
-                // 存入 textItems
-                textItems.push_back(std::move(item));
+                lineText += QChar(ch->c);
+                lineColor.setRgb(
+                    (ch->argb >> 16) & 0xFF,
+                    (ch->argb >> 8) & 0xFF,
+                    ch->argb & 0xFF,
+                    (ch->argb >> 24) & 0xFF
+                );
             }
+
+            fz_point origin = text_line->first_char->origin;
+            lineOrigin.setX(origin.x - bbox.x0);
+            lineOrigin.setY(origin.y - bbox.y0);
+
+            // MuPDF 坐标系统已经采用左上角为原点
+            // 直接扣除页面边界的偏移量即可
+            lineRect.setRect(min_x - bbox.x0, min_y - bbox.y0, max_x - min_x, max_y - min_y);
+
+            // 设置字体
+            if (text_line->first_char->font) {
+                const char* fontName = fz_font_name(_doc._ctx, text_line->first_char->font);
+                lineFont = QFont(QString::fromUtf8(fontName));
+                lineFont.setPointSizeF(text_line->first_char->size);
+            }
+
+            textItems.emplace_back(TextItem{lineText, lineRect, lineFont, lineColor, lineOrigin});
         }
     }
 
+    fz_drop_stext_page(_doc._ctx, text_page);
     return textItems;
 }
 
