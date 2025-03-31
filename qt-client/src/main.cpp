@@ -187,9 +187,11 @@ int main(int argc, char* argv[]) {
     qDebug() << "页码:" << pdf2.pageCount();
 
     QLabel label;
-    auto img = pdf2.page(0)->renderImage();
-    label.setPixmap(QPixmap::fromImage(img).scaled(800, 600));
+    auto img = pdf2.page(10)->renderImage(1.25, 1.25);
+    label.setPixmap(QPixmap::fromImage(img));
+    label.setFixedSize(img.size());
     w.setCentralWidget(&label);
+    w.setFixedSize(img.size());
 
     w.show();
     return app.exec();

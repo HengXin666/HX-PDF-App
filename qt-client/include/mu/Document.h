@@ -144,7 +144,7 @@ private:
     int _transparent = false;
 
     // 背景颜色 RGBA
-    unsigned char _r = 255, _g = 255, _b = 255, _a = 255;
+    int _r = 255, _g = 255, _b = 255, _a = 255;
 protected:
     fz_context* _ctx;
     fz_stream* _stream;

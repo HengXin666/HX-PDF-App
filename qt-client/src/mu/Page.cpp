@@ -4,29 +4,15 @@
 
 #include <mu/Document.h>
 
-static void clear_rgb_samples_with_value(
-    unsigned char *samples, int size,
-    int b, int g, int r, int a)
-{
-int i = 0;
+static void clear_rgb_samples_with_value(unsigned char* samples, int size,
+                                         int b, int g, int r, int a) {
+    int i = 0;
 
-while (i < size)
-{
-    *(samples + i++) = r;
-    *(samples + i++) = g;
-    *(samples + i++) = b;
-    *(samples + i++) = a;
-}
-}
-
-/**
- * @brief Clean up image data when the last copy of the QImage is destoryed.
- */
-static inline void imageCleanupHandler(void* data) {
-    unsigned char* samples = static_cast<unsigned char*>(data);
-
-    if (samples) {
-        delete[] samples;
+    while (i < size) {
+        *(samples + i++) = r;
+        *(samples + i++) = g;
+        *(samples + i++) = b;
+        *(samples + i++) = a;
     }
 }
 
@@ -69,47 +55,62 @@ QSizeF Page::size() const {
 QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
     fz_pixmap* pixmap = nullptr;
     unsigned char* samples = nullptr;
-    unsigned char* copyed_samples = nullptr;
+    unsigned char* copyedSamples = nullptr;
     int width = 0;
     int height = 0;
     int size = 0;
 
-    fz_rect mediabox;
-    fz_stext_page* text_page = fz_new_stext_page(_doc._ctx, fz_bound_page(_doc._ctx, _page));
+    // 创建一个空的文本页面
+    fz_stext_page* textPage =
+        fz_new_stext_page(_doc._ctx, fz_bound_page(_doc._ctx, _page));
+    
     fz_try(_doc._ctx) {
-        fz_device* tdev = fz_new_stext_device(_doc._ctx, text_page, nullptr);
-        fz_run_display_list(_doc._ctx, _displayList, tdev, fz_identity, fz_infinite_rect, nullptr);
+        // 创建一个文本设备 (用于接收渲染的文本)
+        fz_device* tdev = fz_new_stext_device(_doc._ctx, textPage, nullptr);
+
+        // 使用文本设备渲染显示列表, 将文本提取到 textPage
+        fz_run_display_list(_doc._ctx, _displayList, tdev, fz_identity,
+                            fz_infinite_rect, nullptr);
         fz_close_device(_doc._ctx, tdev);
         fz_drop_device(_doc._ctx, tdev);
-    } fz_catch(_doc._ctx) {
-        fz_drop_stext_page(_doc._ctx, text_page);
+    } fz_catch(_doc._ctx) [[unlikely]] {
+        fz_drop_stext_page(_doc._ctx, textPage);
         return QImage();
     }
 
-    // build transform matrix
+    // 构建变换矩阵
     fz_matrix transform = fz_pre_rotate(fz_scale(scaleX, scaleY), rotation);
     
-    // get transformed page size
+    // 获得转换页面的大小
     fz_rect bounds = fz_bound_page(_doc._ctx, _page);
     fz_irect bbox = fz_round_rect(fz_transform_rect(bounds, transform));
     bounds = fz_rect_from_irect(bbox);
 
-    // render to pixmap
+    // 渲染到 fz_pixmap
     fz_device* dev = nullptr;
     fz_try(_doc._ctx) {
-        pixmap = fz_new_pixmap_with_bbox(_doc._ctx, fz_device_rgb(_doc._ctx), bbox, nullptr, 1);
+        pixmap = fz_new_pixmap_with_bbox(_doc._ctx, fz_device_rgb(_doc._ctx),
+                                         bbox, nullptr, 1);
 
         if (!_doc._transparent) {
             samples = fz_pixmap_samples(_doc._ctx, pixmap);
-            if (!samples) {
-                fz_throw(_doc._ctx, FZ_ERROR_GENERIC, "Failed to get pixmap samples");
+            if (!samples) [[unlikely]] {
+                fz_throw(_doc._ctx, FZ_ERROR_GENERIC,
+                         "Failed to get pixmap samples");
             }
-            clear_rgb_samples_with_value(samples, size, _doc._b, _doc._g, _doc._r, _doc._a);
+
+            if (_doc._b == 255 && _doc._g == 255 && _doc._r == 255 && _doc._a == 255) {
+                fz_clear_pixmap_with_value(_doc._ctx, pixmap, 0xFF);
+            } else {
+                clear_rgb_samples_with_value(samples, size, _doc._b, _doc._g,
+                                             _doc._r, _doc._a);
+            }
         }
-        
+
         dev = fz_new_draw_device(_doc._ctx, transform, pixmap);
-        fz_run_display_list(_doc._ctx, _displayList, dev, transform, bounds, nullptr);
-        
+        fz_run_display_list(_doc._ctx, _displayList, dev, transform, bounds,
+                            nullptr);
+
         samples = fz_pixmap_samples(_doc._ctx, pixmap);
         width = fz_pixmap_width(_doc._ctx, pixmap);
         height = fz_pixmap_height(_doc._ctx, pixmap);
@@ -119,109 +120,38 @@ QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
             fz_close_device(_doc._ctx, dev);
             fz_drop_device(_doc._ctx, dev);
         }
-    } fz_catch(_doc._ctx) {
+    } fz_catch(_doc._ctx) [[unlikely]] {
         if (pixmap) {
             fz_drop_pixmap(_doc._ctx, pixmap);
         }
-        fz_drop_stext_page(_doc._ctx, text_page);
+        fz_drop_stext_page(_doc._ctx, textPage);
         return QImage();
     }
     
-    // render to QImage
+    // 渲染到 QImage
     QImage image;
-    if (!pixmap) {
-        fz_drop_stext_page(_doc._ctx, text_page);
+    if (!pixmap) [[unlikely]] {
+        fz_drop_stext_page(_doc._ctx, textPage);
         return image;
     }
     
-    copyed_samples = new unsigned char[size];
-    memcpy(copyed_samples, samples, size);
+    copyedSamples = new unsigned char[size];
+    memcpy(copyedSamples, samples, size);
     fz_drop_pixmap(_doc._ctx, pixmap);
-    
-    image = QImage(copyed_samples, width, height, QImage::Format_RGBA8888,
-                   [](void* data) { delete[] static_cast<unsigned char*>(data); }, copyed_samples);
-    
-    fz_drop_stext_page(_doc._ctx, text_page);
-    return image;
-}
 
-/*
-QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
-    fz_pixmap* pixmap = nullptr;
-    unsigned char* samples = nullptr;
-    unsigned char* copyed_samples = nullptr;
-    int width = 0;
-    int height = 0;
-    int size = 0;
-
-    fz_rect mediabox;
-    fz_stext_page* text_page = fz_new_stext_page(_doc._ctx, fz_bound_page(_doc._ctx, _page));
-
-    fz_device* tdev;
-    tdev = fz_new_stext_device(_doc._ctx, text_page, nullptr);
-    fz_run_display_list(_doc._ctx, _displayList, tdev, fz_identity, fz_infinite_rect, nullptr);
-    fz_close_device(_doc._ctx, tdev);
-    fz_drop_device(_doc._ctx, tdev);
-
-    // build transform matrix
-    fz_matrix transform = fz_pre_rotate(fz_scale(scaleX, scaleY), rotation);
-
-    // get transformed page size
-    fz_rect bounds = fz_bound_page(_doc._ctx, _page);
-    fz_irect bbox = fz_round_rect(fz_transform_rect(bounds, transform));
-    bounds = fz_rect_from_irect(bbox);
-
-    // render to pixmap
-    fz_device* dev = nullptr;
-    fz_try(_doc._ctx) {
-        // fz_pixmap will always include a separate alpha channel
-        pixmap = fz_new_pixmap_with_bbox(_doc._ctx, fz_device_rgb(_doc._ctx), bbox, nullptr, 1);
-
-        if (!_doc._transparent) {
-            if (_doc._b == 255 && _doc._g == 255 && _doc._r == 255 && _doc._a == 255) {
-                // with white background
-                fz_clear_pixmap_with_value(_doc._ctx, pixmap, 0xff);
-            } else {
-                // with user defined background color
-                clear_rgb_samples_with_value(samples, size, _doc._b, _doc._g, _doc._r, _doc._a);
+    image = QImage(
+        copyedSamples, width, height, QImage::Format_RGBA8888,
+        [](void* data) {
+            if (data) [[likely]] {
+                delete[] static_cast<unsigned char*>(data); 
             }
-        }
-        dev = fz_new_draw_device(_doc._ctx, {}, pixmap);
-        fz_run_display_list(_doc._ctx, _displayList, dev, transform, bounds, nullptr);
+        },
+        copyedSamples
+    );
 
-        samples = fz_pixmap_samples(_doc._ctx, pixmap);
-        width = fz_pixmap_width(_doc._ctx, pixmap);
-        height = fz_pixmap_height(_doc._ctx, pixmap);
-        size = width * height * 4;
-    } fz_always(_doc._ctx) {
-        if (dev) {
-            fz_close_device(_doc._ctx, dev);
-            fz_drop_device(_doc._ctx, dev);
-        }
-        dev = nullptr;
-    } fz_catch(_doc._ctx) {
-        if (pixmap) {
-            fz_drop_pixmap(_doc._ctx, pixmap);
-        }
-        pixmap = nullptr;
-    }
-
-    // render to QImage
-    QImage image;
-    if (!pixmap) {
-        return image;
-    }
-    copyed_samples = new unsigned char[size];
-    memcpy(copyed_samples, samples, size);
-    fz_drop_pixmap(_doc._ctx, pixmap);
-
-    image = QImage(copyed_samples,
-                   width, height, QImage::Format_RGBA8888,
-                   imageCleanupHandler, copyed_samples);
-
+    fz_drop_stext_page(_doc._ctx, textPage);
     return image;
 }
-    */
 
 Page::~Page() noexcept {
     if (_displayList) [[likely]] {

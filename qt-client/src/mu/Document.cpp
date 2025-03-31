@@ -38,7 +38,7 @@ int Document::pageCount() const {
     }
     fz_try(_ctx) {
         _pageCnt = fz_count_pages(_ctx, _doc);
-    } fz_catch(_ctx) {
+    } fz_catch(_ctx) [[unlikely]] {
         throw std::runtime_error{fz_caught_message(_ctx)};
     }
     return _pageCnt;
