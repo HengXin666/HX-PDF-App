@@ -16,6 +16,7 @@ Document::Document(const char* filePath) noexcept
     , _doc()
 {
     fz_register_document_handlers(_ctx);
+    fz_set_aa_level(_ctx, 8); // 8 级抗锯齿, 提高清晰度
 }
 
 Document& Document::setStream(StreamFuncBuilder const&) {

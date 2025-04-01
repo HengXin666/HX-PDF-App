@@ -160,10 +160,36 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
         painter.setFont(item.font);
         painter.setPen(item.color);
         painter.drawRect(item.rect);
-        QPointF baselinePos = item.origin;  // 基线位置
-        painter.drawText(baselinePos, item.text);
+        painter.drawText(item.origin, item.text);
     }
 }
+
+class ImageWidget : public QWidget {
+public:
+    ImageWidget(QWidget* parent = nullptr) : QWidget(parent) {}
+
+    void setImage(const QImage& img) {
+        image = img;
+        update();  // 触发重绘
+    }
+
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter painter(this);
+        painter.drawImage(0, 0, image);
+    }
+
+    void resizeEvent(QResizeEvent *event) override {
+        update();
+    }
+
+private:
+    QImage image;
+};
+
+#include <QBuffer>
+#include <QImageReader>
+#include <QScrollArea>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -223,16 +249,14 @@ int main(int argc, char* argv[]) {
     pdf2.setStream(bs).buildDocument(".epub");
     // qDebug() << "页码:" << pdf2.pageCount();
 
-    // QLabel label;
-    // auto img = pdf1.page(10)->renderOnlyDraw(1, 1);
-    // label.setPixmap(QPixmap::fromImage(img));
-    // label.setFixedSize(img.size());
-    // w.setCentralWidget(&label);
-    // w.setFixedSize(img.size());
 
-    // qDebug() << pdf1.page(10)->testGetText();
+    ImageWidget* widget = new ImageWidget();
+    auto img = pdf1.page(10)->renderImage(72, 72);
+    qDebug() << img.size();
+    widget->resize(800, 600);
+    widget->setImage(img);
+    widget->show();
 
-    // w.show();
 
     QMainWindow mainWindow;
     auto *renderWidget = new TextRenderWidget();

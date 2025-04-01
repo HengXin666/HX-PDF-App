@@ -58,7 +58,7 @@ public:
      * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
      * @return QImage 如果失败, 则返回空的 QImage
      */
-    QImage renderImage(float scaleX = 1.0f, float scaleY = 1.0f, float rotation = 0.0f) const;
+    QImage renderImage(float dpiX = 72.f, float dpiY = 72.f, float rotation = 0.0f) const;
 
     /**
      * @brief 将页面渲染到QImage (仅渲染绘图, 不包含文本)

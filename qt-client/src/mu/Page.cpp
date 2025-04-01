@@ -37,8 +37,11 @@ Page::Page(Document const& doc, int index) noexcept
         // 创建用于预渲染的 List Device, 并绑定到显示列表
         listDevice = fz_new_list_device(_doc._ctx, _displayList);
 
+        int dpi = 96; // 设置 dpi
+        fz_matrix ctm = fz_scale(dpi / 72.0f, dpi / 72.0f);
+
         // 解析页面内容(文本、图像等), 并写入 _displayList
-        fz_run_page_contents(_doc._ctx, _page, listDevice, fz_identity, nullptr);
+        fz_run_page_contents(_doc._ctx, _page, listDevice, ctm, nullptr);
         
         fz_close_device(_doc._ctx, listDevice);
         fz_drop_device(_doc._ctx, listDevice);
@@ -52,7 +55,10 @@ QSizeF Page::size() const {
     return {rect.x1 - rect.x0, rect.y1 - rect.y0};
 }
 
-QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
+QImage Page::renderImage(float dpiX, float dpiY, float rotation) const {
+    float scaleX = dpiX / 72.0f;
+    float scaleY = dpiY / 72.0f;
+    
     fz_pixmap* pixmap = nullptr;
     unsigned char* samples = nullptr;
     unsigned char* copyedSamples = nullptr;
@@ -64,9 +70,10 @@ QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
     fz_stext_page* textPage =
         fz_new_stext_page(_doc._ctx, fz_bound_page(_doc._ctx, _page));
     
+    fz_device* tdev = nullptr;
     fz_try(_doc._ctx) {
         // 创建一个文本设备 (用于接收渲染的文本)
-        fz_device* tdev = fz_new_stext_device(_doc._ctx, textPage, nullptr);
+        tdev = fz_new_stext_device(_doc._ctx, textPage, nullptr);
 
         // 使用文本设备渲染显示列表, 将文本提取到 textPage
         fz_run_display_list(_doc._ctx, _displayList, tdev, fz_identity,
@@ -74,6 +81,11 @@ QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
         fz_close_device(_doc._ctx, tdev);
         fz_drop_device(_doc._ctx, tdev);
     } fz_catch(_doc._ctx) [[unlikely]] {
+        if (tdev) {
+            fz_close_device(_doc._ctx, tdev);
+            fz_drop_device(_doc._ctx, tdev);
+            tdev = nullptr;
+        }
         fz_drop_stext_page(_doc._ctx, textPage);
         return QImage();
     }
@@ -93,12 +105,6 @@ QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
                                          bbox, nullptr, 1);
 
         if (!_doc._transparent) {
-            samples = fz_pixmap_samples(_doc._ctx, pixmap);
-            if (!samples) [[unlikely]] {
-                fz_throw(_doc._ctx, FZ_ERROR_GENERIC,
-                         "Failed to get pixmap samples");
-            }
-
             if (_doc._b == 255 && _doc._g == 255 && _doc._r == 255 && _doc._a == 255) {
                 fz_clear_pixmap_with_value(_doc._ctx, pixmap, 0xFF);
             } else {
@@ -119,13 +125,15 @@ QImage Page::renderImage(float scaleX, float scaleY, float rotation) const {
         if (dev) {
             fz_close_device(_doc._ctx, dev);
             fz_drop_device(_doc._ctx, dev);
+            dev = nullptr;
         }
     } fz_catch(_doc._ctx) [[unlikely]] {
         if (pixmap) {
             fz_drop_pixmap(_doc._ctx, pixmap);
+            pixmap = nullptr;
         }
         fz_drop_stext_page(_doc._ctx, textPage);
-        return QImage();
+        return QImage{};
     }
     
     // 渲染到 QImage
@@ -257,65 +265,99 @@ QImage Page::renderOnlyDraw(float scaleX, float scaleY, float rotation) const {
 std::vector<TextItem> Page::testGetText() const {
     std::vector<TextItem> textItems;
     fz_stext_page* text_page = fz_new_stext_page_from_page(_doc._ctx, _page, nullptr);
-    if (!text_page) {
-        return textItems;
-    }
+    if (!text_page) return textItems;
 
-    fz_rect bbox = fz_bound_page(_doc._ctx, _page);
+    // 坐标变换矩阵
+    fz_matrix ctm = fz_transform_page(fz_bound_page(_doc._ctx, _page), 72, 0);
+
+    QString currentLineText;
+    QRectF currentLineRect;
+    QFont currentLineFont;
+    QColor currentLineColor;
+    QPointF currentLineOrigin;
+    bool isNewLine = true;
+
+    fz_stext_char* prevChar = nullptr;
 
     for (fz_stext_block* text_block = text_page->first_block; text_block; text_block = text_block->next) {
         if (text_block->type != FZ_STEXT_BLOCK_TEXT) 
             continue;
 
         for (fz_stext_line* text_line = text_block->u.t.first_line; text_line; text_line = text_line->next) {
-            QString lineText;
-            QRectF lineRect;
-            QFont lineFont;
-            QColor lineColor;
-            QPointF lineOrigin;
-
-            float min_x = FLT_MAX, max_x = -FLT_MAX;
-            float min_y = FLT_MAX, max_y = -FLT_MAX;
-
             for (fz_stext_char* ch = text_line->first_char; ch; ch = ch->next) {
-                fz_quad quad = ch->quad;
-                // 更新字符的边界
-                min_x = std::min({min_x, quad.ul.x, quad.ur.x, quad.ll.x, quad.lr.x});
-                max_x = std::max({max_x, quad.ul.x, quad.ur.x, quad.ll.x, quad.lr.x});
-                min_y = std::min({min_y, quad.ul.y, quad.ur.y, quad.ll.y, quad.lr.y});
-                max_y = std::max({max_y, quad.ul.y, quad.ur.y, quad.ll.y, quad.lr.y});
-
-                lineText += QChar(ch->c);
-                lineColor.setRgb(
+                // 文字、颜色
+                QString charText(QChar(ch->c));
+                QColor charColor(
                     (ch->argb >> 16) & 0xFF,
                     (ch->argb >> 8) & 0xFF,
                     ch->argb & 0xFF,
                     (ch->argb >> 24) & 0xFF
                 );
+
+                // 字体
+                const char* fontName = ch->font ? fz_font_name(_doc._ctx, ch->font) : "Default";
+                QFont charFont(QString::fromUtf8(fontName));
+                charFont.setPointSizeF(static_cast<qreal>(ch->size));
+
+                // 坐标转换
+                fz_rect bbox = fz_rect_from_quad(ch->quad);
+                bbox = fz_transform_rect(bbox, ctm);
+                QRectF charRect(bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+                QPointF charOrigin(bbox.x0, bbox.y1);
+
+                // 检测是否需要新建一行
+                if (isNewLine || !prevChar ||
+                    (prevChar->origin.y != ch->origin.y) || // 不是同一行
+                    (prevChar->size != ch->size) || // 字号不同
+                    (prevChar->font != ch->font) || // 字体不同
+                    (prevChar->argb != ch->argb)) { // 颜色不同
+
+                    // 存储上一行
+                    if (!currentLineText.isEmpty()) {
+                        textItems.emplace_back(TextItem{
+                            currentLineText,
+                            currentLineRect,
+                            currentLineFont,
+                            currentLineColor,
+                            currentLineOrigin
+                        });
+                    }
+
+                    // 开始新行
+                    currentLineText = charText;
+                    currentLineRect = charRect;
+                    currentLineFont = charFont;
+                    currentLineColor = charColor;
+                    currentLineOrigin = charOrigin;
+                    isNewLine = false;
+                } else {
+                    // 继续合并同一行
+                    currentLineText += charText;
+                    currentLineRect.setRight(charRect.right());
+                    currentLineRect.setBottom(qMax(currentLineRect.bottom(), charRect.bottom()));
+                }
+
+                prevChar = ch;
             }
-
-            fz_point origin = text_line->first_char->origin;
-            lineOrigin.setX(origin.x - bbox.x0);
-            lineOrigin.setY(origin.y - bbox.y0);
-
-            // MuPDF 坐标系统已经采用左上角为原点
-            // 直接扣除页面边界的偏移量即可
-            lineRect.setRect(min_x - bbox.x0, min_y - bbox.y0, max_x - min_x, max_y - min_y);
-
-            // 设置字体
-            if (text_line->first_char->font) {
-                const char* fontName = fz_font_name(_doc._ctx, text_line->first_char->font);
-                lineFont = QFont(QString::fromUtf8(fontName));
-                lineFont.setPointSizeF(text_line->first_char->size);
-            }
-
-            textItems.emplace_back(TextItem{lineText, lineRect, lineFont, lineColor, lineOrigin});
         }
+    }
+
+    // 存储最后一行
+    if (!currentLineText.isEmpty()) {
+        textItems.emplace_back(TextItem{
+            currentLineText,
+            currentLineRect,
+            currentLineFont,
+            currentLineColor,
+            currentLineOrigin
+        });
     }
 
     fz_drop_stext_page(_doc._ctx, text_page);
     return textItems;
 }
+
+
 
 Page::~Page() noexcept {
     if (_displayList) [[likely]] {
