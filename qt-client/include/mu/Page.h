@@ -69,7 +69,8 @@ public:
      */
     QImage renderOnlyDraw(float scaleX = 1.0f, float scaleY = 1.0f, float rotation = 0.0f) const;
 
-    std::vector<TextItem> testGetText() const;
+    std::vector<TextItem> testGetText(float scale = 1.0f, float rotation = 0.0f) const;
+    std::vector<TextItem> testGetTextLine(float scale = 1.0f, float rotation = 0.0f) const;
 
     ~Page() noexcept;
 private:

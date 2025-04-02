@@ -17,6 +17,8 @@ qt_add_executable(${projectName}
     ${qrc_files}
 )
 
+target_compile_features(${projectName} PUBLIC cxx_std_20)
+
 target_link_libraries(${projectName}
     PRIVATE Qt::Core
     PRIVATE Qt::Gui

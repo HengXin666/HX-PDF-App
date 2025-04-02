@@ -159,7 +159,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
     for (const auto& item : textItems) {
         painter.setFont(item.font);
         painter.setPen(item.color);
-        painter.drawRect(item.rect);
+        // painter.drawRect(item.rect);
         painter.drawText(item.origin, item.text);
     }
 }
@@ -250,12 +250,12 @@ int main(int argc, char* argv[]) {
     // qDebug() << "页码:" << pdf2.pageCount();
 
 
-    ImageWidget* widget = new ImageWidget();
-    auto img = pdf1.page(10)->renderImage(72, 72);
-    qDebug() << img.size();
-    widget->resize(800, 600);
-    widget->setImage(img);
-    widget->show();
+    // ImageWidget* widget = new ImageWidget();
+    // auto img = pdf1.page(10)->renderImage(72, 72);
+    // qDebug() << img.size();
+    // widget->resize(800, 600);
+    // widget->setImage(img);
+    // widget->show();
 
 
     QMainWindow mainWindow;
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
         {"Qt", QRectF(60, 20, 20, 20), QFont("Arial", 12)},
     };
     
-    renderWidget->setTextItems(pdf1.page(10)->testGetText());
+    renderWidget->setTextItems(pdf1.page(32)->testGetTextLine());
 
     mainWindow.setCentralWidget(renderWidget);
     mainWindow.resize(800, 600);
