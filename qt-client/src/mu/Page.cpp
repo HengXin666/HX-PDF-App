@@ -566,6 +566,149 @@ std::vector<TextItem> Page::testGetTextLine(float scale, float rotation) const {
     return textItems;
 }
 
+std::vector<TextItem> Page::testGetTextTest(float scale, float rotation) const {
+    std::vector<TextItem> textItems;
+    fz_stext_page* text_page = fz_new_stext_page_from_page(_doc._ctx, _page, nullptr);
+    if (!text_page) [[unlikely]] {
+        return textItems;
+    }
+
+    // 构建变换矩阵
+    fz_matrix transform = fz_pre_rotate(fz_scale(scale, scale), rotation);
+    
+    // 创建缩放和旋转矩阵
+    fz_matrix scale_matrix = fz_scale(scale, scale);
+    fz_matrix rotate_matrix = fz_rotate(rotation);
+    fz_matrix ctm = fz_concat(scale_matrix, rotate_matrix); // 组合变换矩阵
+
+    // 获取变换后的页面边界框
+    fz_rect pageBounds = fz_transform_rect(fz_bound_page(_doc._ctx, _page), transform);
+
+    textItems.push_back({
+        .text = {},
+        .rect = {
+            pageBounds.x0, pageBounds.y0,
+            pageBounds.x1 - pageBounds.x0,  // 宽度
+            pageBounds.y1 - pageBounds.y0   // 高度
+        },
+        .color = {255, 0, 0, 255}  // 使用红色高对比度框出页面
+    });
+
+    QString currentLineText;
+    QRectF currentLineRect;
+    QFont currentLineFont;
+    QColor currentLineColor;
+    QPointF currentLineOrigin;
+    bool isNewLine = true;
+
+    fz_stext_char* prevChar = nullptr;
+
+    for (fz_stext_block* text_block = text_page->first_block; text_block; text_block = text_block->next) {
+        if (text_block->type != FZ_STEXT_BLOCK_TEXT) 
+            continue;
+
+        for (fz_stext_line* text_line = text_block->u.t.first_line; text_line; text_line = text_line->next) {
+            for (fz_stext_char* ch = text_line->first_char; ch; ch = ch->next) {
+                // 文字、颜色
+                QString charText(QChar(ch->c));
+                QColor charColor(
+                    (ch->argb >> 16) & 0xFF,
+                    (ch->argb >> 8) & 0xFF,
+                    ch->argb & 0xFF,
+                    (ch->argb >> 24) & 0xFF
+                );
+
+                // 字体
+                fz_font* font = ch->font;
+                const char* font_family = "sans-serif";
+                if (fz_font_is_monospaced(_doc._ctx, font))
+                    font_family = "monospace";
+                else if (fz_font_is_serif(_doc._ctx, font))
+                    font_family = "serif";
+                const char* fontName = font ? fz_font_name(_doc._ctx, font) : "Default";
+                QFont charFont(
+                    QString::fromUtf8(fontName)
+                );
+                charFont.setFamily(font_family);
+                charFont.setWeight(fz_font_is_bold(_doc._ctx, font)
+                    ? QFont::Bold
+                    : QFont::Normal
+                );
+                charFont.setStyle(fz_font_is_italic(_doc._ctx, font) 
+                    ? QFont::Style::StyleItalic
+                    : QFont::Style::StyleNormal
+                );
+
+                // 警告! 这个只能是 setPixelSize 而不能是 setPointSize
+                charFont.setPixelSize(ch->size * scale);
+
+                // 修正坐标计算: 使用 fz_transform_quad()
+                fz_quad quadTransformed = fz_transform_quad(ch->quad, ctm);
+                QRectF charRect(
+                    quadTransformed.ul.x, quadTransformed.ul.y,
+                    quadTransformed.lr.x - quadTransformed.ul.x,
+                    quadTransformed.lr.y - quadTransformed.ul.y
+                );
+
+                // 变换字符的原点
+                QPointF charOrigin(ch->origin.x * scale, ch->origin.y * scale);
+
+                // 检测是否需要新建一行
+                if (isNewLine 
+                    || !prevChar 
+                    || (fabs(prevChar->origin.y - ch->origin.y) > 1e-3f) // 不是同一行
+                    || (prevChar->size != ch->size) // 字号不同
+                    || (prevChar->font != ch->font) // 字体不同
+                    || (prevChar->argb != ch->argb)
+                ) { // 颜色不同
+
+                    // 存储上一行
+                    if (!currentLineText.isEmpty()) {
+                        textItems.emplace_back(TextItem{
+                            currentLineText,
+                            currentLineRect,
+                            currentLineFont,
+                            currentLineColor,
+                            currentLineOrigin
+                        });
+                    }
+
+                    // 开始新行
+                    currentLineText = charText;
+                    currentLineRect = charRect;
+                    currentLineFont = charFont;
+                    currentLineColor = charColor;
+                    currentLineOrigin = charOrigin;
+                    isNewLine = false;
+                } else {
+                    // 继续合并同一行
+                    currentLineText += charText;
+                    currentLineRect.setRight(charRect.right());
+                    currentLineRect.setBottom(
+                        qMax(currentLineRect.bottom(), charRect.bottom())
+                    );
+                }
+
+                prevChar = ch;
+            }
+        }
+    }
+
+    // 存储最后一行
+    if (!currentLineText.isEmpty()) {
+        textItems.emplace_back(TextItem{
+            currentLineText,
+            currentLineRect,
+            currentLineFont,
+            currentLineColor,
+            currentLineOrigin
+        });
+    }
+
+    fz_drop_stext_page(_doc._ctx, text_page);
+    return textItems;
+}
+
 Page::~Page() noexcept {
     if (_displayList) [[likely]] {
         fz_drop_display_list(_doc._ctx, _displayList);

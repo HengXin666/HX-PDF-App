@@ -37,7 +37,7 @@ struct TextItem {
     QRectF rect;   // 文字矩形区域
     QFont font;    // 字体信息
     QColor color;  // 字体颜色信息
-    QPointF origin; // 文字的基线起点（origin）
+    QPointF origin; // 文字的基线起点
 };
 
 class Page {
@@ -71,6 +71,7 @@ public:
 
     std::vector<TextItem> testGetText(float scale = 1.0f, float rotation = 0.0f) const;
     std::vector<TextItem> testGetTextLine(float scale = 1.0f, float rotation = 0.0f) const;
+    std::vector<TextItem> testGetTextTest(float scale = 1.0f, float rotation = 0.0f) const;
 
     ~Page() noexcept;
 private:

@@ -159,7 +159,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
     for (const auto& item : textItems) {
         painter.setFont(item.font);
         painter.setPen(item.color);
-        // painter.drawRect(item.rect);
+        painter.drawRect(item.rect);
         painter.drawText(item.origin, item.text);
     }
 }
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
         {"Qt", QRectF(60, 20, 20, 20), QFont("Arial", 12)},
     };
     
-    renderWidget->setTextItems(pdf1.page(32)->testGetTextLine());
+    renderWidget->setTextItems(pdf1.page(10)->testGetTextTest(1));
 
     mainWindow.setCentralWidget(renderWidget);
     mainWindow.resize(800, 600);
