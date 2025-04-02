@@ -164,32 +164,10 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
     }
 }
 
-class ImageWidget : public QWidget {
-public:
-    ImageWidget(QWidget* parent = nullptr) : QWidget(parent) {}
-
-    void setImage(const QImage& img) {
-        image = img;
-        update();  // 触发重绘
-    }
-
-protected:
-    void paintEvent(QPaintEvent*) override {
-        QPainter painter(this);
-        painter.drawImage(0, 0, image);
-    }
-
-    void resizeEvent(QResizeEvent *event) override {
-        update();
-    }
-
-private:
-    QImage image;
-};
-
 #include <QBuffer>
 #include <QImageReader>
 #include <QScrollArea>
+#include <QVBoxLayout>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -243,19 +221,21 @@ int main(int argc, char* argv[]) {
     };
 
     infoAll(pdf1);
-    QMainWindow w;
-    
+
     MuPdf pdf2{filename2};
     pdf2.setStream(bs).buildDocument(".epub");
     // qDebug() << "页码:" << pdf2.pageCount();
 
-
-    // ImageWidget* widget = new ImageWidget();
-    // auto img = pdf1.page(10)->renderImage(72, 72);
-    // qDebug() << img.size();
-    // widget->resize(800, 600);
-    // widget->setImage(img);
-    // widget->show();
+    auto img = pdf1.page(10)->renderImage(144);
+    QWidget widget{};
+    auto layout = new QVBoxLayout{&widget};
+    auto label = new QLabel{&widget};
+    auto pixmap = QPixmap::fromImage(img);
+    pixmap.scaled(600, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    label->setPixmap(pixmap);
+    layout->addWidget(label);
+    widget.setFixedSize(600, 600);
+    widget.show();
 
 
     QMainWindow mainWindow;

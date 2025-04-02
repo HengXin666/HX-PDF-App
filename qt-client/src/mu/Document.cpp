@@ -17,6 +17,8 @@ Document::Document(const char* filePath) noexcept
 {
     fz_register_document_handlers(_ctx);
     fz_set_aa_level(_ctx, 8); // 8 级抗锯齿, 提高清晰度
+    fz_enable_icc(_ctx); // 启用色彩管理
+    fz_set_text_aa_level(_ctx, 8); // 文本抗锯齿等级
 }
 
 Document& Document::setStream(StreamFuncBuilder const&) {

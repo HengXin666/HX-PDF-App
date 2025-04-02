@@ -75,6 +75,8 @@ public:
      */
     std::vector<TextItem> renderTextLine(float scale = 1.0f, float rotation = 0.0f) const;
 
+    QString renderToHtml(float scale = 1.0f, float rotation = 0.0f) const;
+
     ~Page() noexcept;
 private:
     Document const& _doc;
