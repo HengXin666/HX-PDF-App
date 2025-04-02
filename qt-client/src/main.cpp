@@ -159,7 +159,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
     for (const auto& item : textItems) {
         painter.setFont(item.font);
         painter.setPen(item.color);
-        painter.drawRect(item.rect);
+        // painter.drawRect(item.rect);
         painter.drawText(item.origin, item.text);
     }
 }
@@ -261,13 +261,7 @@ int main(int argc, char* argv[]) {
     QMainWindow mainWindow;
     auto *renderWidget = new TextRenderWidget();
 
-    // 这里是模拟数据，实际应从 testGetText() 获取
-    std::vector<HX::Mu::TextItem> items = {
-        {"你好", QRectF(10, 20, 40, 20), QFont("SimSun", 12)},
-        {"Qt", QRectF(60, 20, 20, 20), QFont("Arial", 12)},
-    };
-    
-    renderWidget->setTextItems(pdf1.page(10)->testGetTextTest(1));
+    renderWidget->setTextItems(pdf1.page(10)->renderText(1, 90));
 
     mainWindow.setCentralWidget(renderWidget);
     mainWindow.resize(800, 600);

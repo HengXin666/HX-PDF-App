@@ -53,25 +53,27 @@ public:
 
     /**
      * @brief 将页面渲染到QImage (包含绘图 和 文本)
-     * @param scaleX X方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
-     * @param scaleY Y方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
+     * @param dpi DPI 默认是 72
      * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
      * @return QImage 如果失败, 则返回空的 QImage
      */
-    QImage renderImage(float dpiX = 72.f, float dpiY = 72.f, float rotation = 0.0f) const;
+    QImage renderImage(float dpi = 72.f, float rotation = 0.0f) const;
 
     /**
-     * @brief 将页面渲染到QImage (仅渲染绘图, 不包含文本)
-     * @param scaleX X方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
-     * @param scaleY Y方向 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
-     * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
-     * @return QImage 如果失败, 则返回空的 QImage
+     * @brief 渲染文本, 以一个字符为一个单位, 绝对的位置准确 (依靠MuPdf的内部解析的坐标准度)
+     * @param scale 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
+     * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f)) [ @todo 这个参数暂时不起作用! ]
+     * @return std::vector<TextItem> 
      */
-    QImage renderOnlyDraw(float scaleX = 1.0f, float scaleY = 1.0f, float rotation = 0.0f) const;
+    std::vector<TextItem> renderText(float scale = 1.0f, float rotation = 0.0f) const;
 
-    std::vector<TextItem> testGetText(float scale = 1.0f, float rotation = 0.0f) const;
-    std::vector<TextItem> testGetTextLine(float scale = 1.0f, float rotation = 0.0f) const;
-    std::vector<TextItem> testGetTextTest(float scale = 1.0f, float rotation = 0.0f) const;
+    /**
+     * @brief 渲染文本, 尽量按照一行渲染
+     * @param scale 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
+     * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
+     * @return std::vector<TextItem> 
+     */
+    std::vector<TextItem> renderTextLine(float scale = 1.0f, float rotation = 0.0f) const;
 
     ~Page() noexcept;
 private:
