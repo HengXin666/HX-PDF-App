@@ -141,4 +141,4 @@ QString Document::info(const char* key) const {
     return res;
 }
 
-} // namespace HX::HX::Mu
+} // namespace HX::Mu
