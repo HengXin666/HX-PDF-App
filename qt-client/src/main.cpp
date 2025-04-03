@@ -171,7 +171,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
 #include <QTransform>
 #include <QScreen>
 
-int main(int argc, char* argv[]) {
+int ____main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
@@ -255,6 +255,19 @@ int main(int argc, char* argv[]) {
 
     qDebug() << QGuiApplication::primaryScreen()->logicalDotsPerInch();
 
+    return app.exec();
+}
+
+#include <widget/MuMainWidget.h>
+
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
+    QScrollArea* scrollArea = new QScrollArea;
+    auto* muWidget = new HX::MuMainWidget{scrollArea};
+    muWidget->setDocument("D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf");
+    scrollArea->setWidget(muWidget);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->show();
     return app.exec();
 }
 

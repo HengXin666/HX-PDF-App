@@ -68,7 +68,6 @@ class PageRenderer : public QThread {
 public:
     explicit PageRenderer(QObject* parent = nullptr);
 
-    
 Q_SIGNALS:
     void pageReady(int page, float zoom, QImage image);
 
