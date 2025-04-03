@@ -47,17 +47,13 @@ int Document::pageCount() const {
     return _pageCnt;
 }
 
-std::shared_ptr<Page> Document::page(int index) {
+std::unique_ptr<Page> Document::page(int index) {
     if (!_doc || index < 0 || index >= pageCount()) [[unlikely]] {
         throw _doc 
             ? std::runtime_error{"Page number is illegal."} 
             : std::runtime_error{"Please load the document first."};
     }
-    auto& res = _pageList[index];
-    if (res) {
-        return res;
-    }
-    return res = std::make_shared<Page>(*this, index);
+    return std::make_unique<Page>(*this, index);
 }
 
 bool Document::needsPassword() const {

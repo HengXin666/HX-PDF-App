@@ -61,10 +61,31 @@ namespace HX::Mu {
     }
 */
 
+class Document;
+
 class PageRenderer : public QThread {
     Q_OBJECT
 public:
     explicit PageRenderer(QObject* parent = nullptr);
+
+    
+Q_SIGNALS:
+    void pageReady(int page, float zoom, QImage image);
+
+public Q_SLOTS:
+    void requestPage(int page, float zoom = 1.0f);
+
+    void setDocument(Document* doc) {
+        _doc = doc;
+    }
+
+protected:
+    void run() override;
+
+private:
+    Document* _doc;
+    int _pageNum;
+    int _zoom;
 };
 
 } // namespace HX::Mu

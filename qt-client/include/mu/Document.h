@@ -20,7 +20,6 @@
 #ifndef _HX_MU_DOCUMENT_H_
 #define _HX_MU_DOCUMENT_H_
 
-#include <map>
 #include <memory>
 
 #include <QString>
@@ -69,9 +68,9 @@ public:
      * @brief 获取第 index 页
      * @param index 页码
      * @throw std::runtime_error 获取失败/页码越界/文档未加载
-     * @return std::shared_ptr<Page> 结果
+     * @return std::unique_ptr<Page> 结果
      */
-    std::shared_ptr<Page> page(int index);
+    std::unique_ptr<Page> page(int index);
 
     /**
      * @brief 判断文档是否需要密码
@@ -116,7 +115,8 @@ public:
      * @param b 
      * @param a 透明通道 (alpha) (默认不透明 = 255)
      */
-    void setBackgroundColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255) {
+    void setBackgroundColor(unsigned char r, unsigned char g, unsigned char b,
+                            unsigned char a = 255) {
         _r = r;
         _g = g;
         _b = b;
@@ -131,11 +131,6 @@ private:
 
     // 仅支持对pdf进行解析!!!
     QString info(const char* key) const;
-
-    // 维护页面: 页码 - 页码渲染体
-    // 因为 RAII, 因此不会内存泄漏, Page的析构会自行管理
-    // 生命周期: Document > Page
-    std::map<int, std::shared_ptr<Page>> _pageList;
 
     // 总页码数
     mutable int _pageCnt = -1;

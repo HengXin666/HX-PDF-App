@@ -169,6 +169,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QTransform>
+#include <QScreen>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -251,6 +252,8 @@ int main(int argc, char* argv[]) {
     mainWindow.setCentralWidget(renderWidget);
     mainWindow.resize(800, 600);
     mainWindow.show();
+
+    qDebug() << QGuiApplication::primaryScreen()->logicalDotsPerInch();
 
     return app.exec();
 }
