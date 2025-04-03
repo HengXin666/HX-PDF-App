@@ -168,6 +168,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
 #include <QImageReader>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <QTransform>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -226,22 +227,26 @@ int main(int argc, char* argv[]) {
     pdf2.setStream(bs).buildDocument(".epub");
     // qDebug() << "页码:" << pdf2.pageCount();
 
-    auto img = pdf1.page(10)->renderImage(144);
-    QWidget widget{};
-    auto layout = new QVBoxLayout{&widget};
-    auto label = new QLabel{&widget};
-    auto pixmap = QPixmap::fromImage(img);
-    pixmap.scaled(600, 600, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    auto img = pdf2.page(10)->renderImage(144);
+    auto label = new QLabel;
+    QTransform transform;
+    double scaleFactor = 1;
+    transform.scale(scaleFactor, scaleFactor);
+    auto pixmap = QPixmap::fromImage(
+        img
+        // .transformed(transform, Qt::SmoothTransformation)
+    );
+    qDebug() << img.size();
+    pixmap.setDevicePixelRatio(2.0);
+    label->setBaseSize(img.size());
     label->setPixmap(pixmap);
-    layout->addWidget(label);
-    widget.setFixedSize(600, 600);
-    widget.show();
+    label->show();
 
 
     QMainWindow mainWindow;
     auto *renderWidget = new TextRenderWidget();
 
-    renderWidget->setTextItems(pdf1.page(10)->renderText(1, 90));
+    renderWidget->setTextItems(pdf2.page(10)->renderText(1));
 
     mainWindow.setCentralWidget(renderWidget);
     mainWindow.resize(800, 600);

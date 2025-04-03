@@ -48,7 +48,7 @@ int Document::pageCount() const {
 }
 
 std::shared_ptr<Page> Document::page(int index) {
-    if (!_doc || index < 0 || index >= _pageCnt) [[unlikely]] {
+    if (!_doc || index < 0 || index >= pageCount()) [[unlikely]] {
         throw _doc 
             ? std::runtime_error{"Page number is illegal."} 
             : std::runtime_error{"Please load the document first."};

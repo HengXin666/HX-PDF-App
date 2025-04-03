@@ -70,12 +70,10 @@ public:
     /**
      * @brief 渲染文本, 尽量按照一行渲染
      * @param scale 缩放 (默认 = 1.f, > 1.f 放大, < 1.f 缩小)
-     * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f))
+     * @param rotation 顺时针旋转的旋转度 (范围: [0.0f，360.0f)) [ @todo 这个参数暂时不起作用! ]
      * @return std::vector<TextItem> 
      */
     std::vector<TextItem> renderTextLine(float scale = 1.0f, float rotation = 0.0f) const;
-
-    QString renderToHtml(float scale = 1.0f, float rotation = 0.0f) const;
 
     ~Page() noexcept;
 private:
