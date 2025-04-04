@@ -231,8 +231,8 @@ int ____main(int argc, char* argv[]) {
     auto img = pdf2.page(10)->renderImage(144);
     auto label = new QLabel;
     QTransform transform;
-    double scaleFactor = 1;
-    transform.scale(scaleFactor, scaleFactor);
+    // double scaleFactor = 1;
+    // transform.scale(scaleFactor, scaleFactor);
     auto pixmap = QPixmap::fromImage(
         img
         // .transformed(transform, Qt::SmoothTransformation)

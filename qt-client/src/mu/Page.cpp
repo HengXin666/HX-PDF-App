@@ -46,8 +46,9 @@ Page::Page(Document const& doc, int index) noexcept
         listDevice = fz_new_list_device(_doc._ctx, _displayList);
 
         // 解析页面内容(文本、图像等), 并写入 _displayList
-        fz_run_page_contents(_doc._ctx, _page, listDevice, fz_identity, nullptr);
-        
+        fz_run_page_contents(_doc._ctx, _page, listDevice, fz_identity,
+                             nullptr);
+
         fz_close_device(_doc._ctx, listDevice);
         fz_drop_device(_doc._ctx, listDevice);
     } fz_catch(_doc._ctx) [[unlikely]] {
@@ -72,8 +73,7 @@ QImage Page::renderImage(float dpi, float rotation) const {
     fz_stext_page* text_page =
         fz_new_stext_page(_doc._ctx, fz_bound_page(_doc._ctx, _page));
 
-    fz_device* tdev;
-    tdev = fz_new_stext_device(_doc._ctx, text_page, nullptr);
+    fz_device* tdev = fz_new_stext_device(_doc._ctx, text_page, nullptr);
     fz_run_display_list(_doc._ctx, _displayList, tdev, fz_identity,
                         fz_infinite_rect, nullptr);
     fz_close_device(_doc._ctx, tdev);
@@ -95,6 +95,11 @@ QImage Page::renderImage(float dpi, float rotation) const {
         pixmap = fz_new_pixmap_with_bbox(_doc._ctx, fz_device_rgb(_doc._ctx),
                                          bbox, nullptr, 1);
 
+        samples = fz_pixmap_samples(_doc._ctx, pixmap);
+        width = fz_pixmap_width(_doc._ctx, pixmap);
+        height = fz_pixmap_height(_doc._ctx, pixmap);
+        size = width * height * 4;
+
         if (!_doc._transparent) {
             if (_doc._b == 255 && _doc._g == 255 && _doc._r == 255 && _doc._a == 255) {
                 // 白色背景
@@ -105,14 +110,10 @@ QImage Page::renderImage(float dpi, float rotation) const {
                     _doc._r, _doc._a);
             }
         }
-        dev = fz_new_draw_device(_doc._ctx, transform, pixmap);
+        // ! 需要使用 fz_identity 而不是 transform
+        dev = fz_new_draw_device(_doc._ctx, fz_identity, pixmap);
         fz_run_display_list(_doc._ctx, _displayList, dev, transform, bounds,
                             nullptr);
-
-        samples = fz_pixmap_samples(_doc._ctx, pixmap);
-        width = fz_pixmap_width(_doc._ctx, pixmap);
-        height = fz_pixmap_height(_doc._ctx, pixmap);
-        size = width * height * 4;
     } fz_always(_doc._ctx) {
         if (dev) {
             fz_close_device(_doc._ctx, dev);

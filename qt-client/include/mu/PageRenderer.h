@@ -72,7 +72,7 @@ Q_SIGNALS:
     void pageReady(int page, float zoom, QImage image);
 
 public Q_SLOTS:
-    void requestPage(int page, float zoom = 1.0f);
+    void requestPage(int page, float zoom = 1.0f, int dpi = 72);
 
     void setDocument(Document* doc) {
         _doc = doc;
@@ -85,6 +85,7 @@ private:
     Document* _doc;
     int _pageNum;
     int _zoom;
+    int _dpi;
 };
 
 } // namespace HX::Mu

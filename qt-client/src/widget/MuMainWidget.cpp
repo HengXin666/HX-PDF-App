@@ -77,9 +77,9 @@ void MuMainWidget::paintEvent(QPaintEvent* event) {
 
         if (_imgLRUCache.contains(page)) {
             const auto& img = _imgLRUCache.get(page);
-            painter.fillRect((width() - img.width()) / 2, y, size.width(),
+            painter.fillRect((width() - size.width()) / 2, y, size.width(),
                              size.height(), Qt::white);
-            painter.drawImage((width() - img.width()) / 2, y, img);
+            painter.drawImage((width() - size.width()) / 2, y, img);
             emit updatePdfPosInfo(_pageIndex, _totalPages, _zoom);
         } else {
             painter.fillRect((width() - size.width()) / 2, y, size.width(),
@@ -87,7 +87,7 @@ void MuMainWidget::paintEvent(QPaintEvent* event) {
             // painter.drawPixmap((size.width() - _placeholderIcon.width()) / 2,
             //                    (size.height() - _placeholderIcon.height()) / 2,
             //                    _placeholderIcon);
-            _pageRenderer->requestPage(page, _zoom);
+            _pageRenderer->requestPage(page, _zoom, _dpi);
         }
         y += size.height() + _pageSpacing;
         ++page;
