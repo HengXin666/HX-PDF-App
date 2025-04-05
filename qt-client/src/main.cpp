@@ -171,7 +171,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
 #include <QTransform>
 #include <QScreen>
 
-int ____main(int argc, char* argv[]) {
+int __main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
@@ -228,17 +228,18 @@ int ____main(int argc, char* argv[]) {
     pdf2.setStream(bs).buildDocument(".epub");
     // qDebug() << "页码:" << pdf2.pageCount();
 
-    auto img = pdf2.page(10)->renderImage(144);
+    auto img = pdf2.page(10)->renderImage(300);
     auto label = new QLabel;
-    QTransform transform;
+    // QTransform transform;
     // double scaleFactor = 1;
     // transform.scale(scaleFactor, scaleFactor);
+    img.setDevicePixelRatio(2);
     auto pixmap = QPixmap::fromImage(
         img
         // .transformed(transform, Qt::SmoothTransformation)
     );
     qDebug() << img.size();
-    pixmap.setDevicePixelRatio(2.0);
+    // pixmap.setDevicePixelRatio(2.0);
     label->setBaseSize(img.size());
     label->setPixmap(pixmap);
     label->show();
@@ -260,11 +261,13 @@ int ____main(int argc, char* argv[]) {
 
 #include <widget/MuMainWidget.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {    
     QApplication app(argc, argv);
+    const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
+    const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
     QScrollArea* scrollArea = new QScrollArea;
     auto* muWidget = new HX::MuMainWidget{scrollArea};
-    muWidget->setDocument("D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf");
+    muWidget->setDocument(filename2);
     scrollArea->setWidget(muWidget);
     scrollArea->setWidgetResizable(true);
     scrollArea->show();

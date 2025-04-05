@@ -1,5 +1,6 @@
 #include <widget/MuMainWidget.h>
 
+#include <QApplication>
 #include <QGuiApplication>
 #include <QScreen>
 #include <QPaintEvent>
@@ -9,6 +10,19 @@
 #include <mu/PageRenderer.h>
 
 namespace HX {
+
+static constexpr int DPI = 150;
+static constexpr int DevicePixelRatio = 1;
+
+QSizeF globalSizeFToLogical(QSizeF globalSize, QScreen* screen = QApplication::primaryScreen()) {
+    qreal scaleFactor = screen->devicePixelRatio();
+    return QSizeF(globalSize.width() / scaleFactor, globalSize.height() / scaleFactor);
+}
+
+QSize globalSizeToLogical(QSize globalSize, QScreen* screen = QApplication::primaryScreen()) {
+    qreal scaleFactor = screen->devicePixelRatio();
+    return QSize(globalSize.width() / scaleFactor, globalSize.height() / scaleFactor);
+}
 
 MuMainWidget::MuMainWidget(QWidget* parent)
     : QWidget(parent)
@@ -20,11 +34,13 @@ MuMainWidget::MuMainWidget(QWidget* parent)
     , _totalPages(0)
     , _totalHeight(0)
     , _zoom(1.)
-    , _dpi(QGuiApplication::primaryScreen()->logicalDotsPerInch())
+    , _dpi(DPI)
     , _placeholderIcon()
 {
     connect(_pageRenderer, &HX::Mu::PageRenderer::pageReady,
             this, &MuMainWidget::loadPage);
+    grabGesture(Qt::SwipeGesture);
+    qDebug() << "DPI" << _dpi;
 }
 
 void MuMainWidget::setDocument(const QString& filePath) {
@@ -46,7 +62,7 @@ void MuMainWidget::setDocument(const QString& filePath) {
     _pageSizes.resize(_totalPages);
 
     for (int i = 0; i < _totalPages; ++i) {
-        auto size =  _doc->page(i)->size() * _dpi / 72.f;
+        auto size = _doc->page(i)->size() * (_dpi / 72.f);
         _pageSizes[i] = std::move(size);
     }
 
@@ -55,6 +71,9 @@ void MuMainWidget::setDocument(const QString& filePath) {
 
 void MuMainWidget::paintEvent(QPaintEvent* event) {
     QPainter painter{this};
+
+    // 很卡, 但是是我们需要的!
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
     // 找到需要渲染的第一页
     int page = 0;
@@ -77,8 +96,6 @@ void MuMainWidget::paintEvent(QPaintEvent* event) {
 
         if (_imgLRUCache.contains(page)) {
             const auto& img = _imgLRUCache.get(page);
-            painter.fillRect((width() - size.width()) / 2, y, size.width(),
-                             size.height(), Qt::white);
             painter.drawImage((width() - size.width()) / 2, y, img);
             emit updatePdfPosInfo(_pageIndex, _totalPages, _zoom);
         } else {
@@ -92,6 +109,10 @@ void MuMainWidget::paintEvent(QPaintEvent* event) {
         y += size.height() + _pageSpacing;
         ++page;
     }
+}
+
+QSizeF MuMainWidget::pageSize(int num) {
+    return _pageSizes[num] * (_zoom / DevicePixelRatio);
 }
 
 void MuMainWidget::invalidate() {
@@ -108,6 +129,7 @@ void MuMainWidget::invalidate() {
 
 void MuMainWidget::loadPage(int page, float zoom, QImage image) {
     static_cast<void>(zoom);
+    image.setDevicePixelRatio(DevicePixelRatio);
     _imgLRUCache.emplace(page, std::move(image));
     update();
 }

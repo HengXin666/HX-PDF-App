@@ -59,9 +59,7 @@ protected:
     void paintEvent(QPaintEvent* event) override;
 
 private:
-    QSizeF pageSize(int num) {
-        return _pageSizes[num] * _zoom;
-    }
+    QSizeF pageSize(int num);
 
     /**
      * @brief 作废数据
