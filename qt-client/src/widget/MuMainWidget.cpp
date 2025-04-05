@@ -6,6 +6,8 @@
 #include <QPaintEvent>
 #include <QPainter>
 
+#include <utils/FpsCount.hpp>
+
 #include <mu/Page.h>
 #include <mu/PageRenderer.h>
 
@@ -13,16 +15,6 @@ namespace HX {
 
 static constexpr int DPI = 150;
 static constexpr int DevicePixelRatio = 1;
-
-QSizeF globalSizeFToLogical(QSizeF globalSize, QScreen* screen = QApplication::primaryScreen()) {
-    qreal scaleFactor = screen->devicePixelRatio();
-    return QSizeF(globalSize.width() / scaleFactor, globalSize.height() / scaleFactor);
-}
-
-QSize globalSizeToLogical(QSize globalSize, QScreen* screen = QApplication::primaryScreen()) {
-    qreal scaleFactor = screen->devicePixelRatio();
-    return QSize(globalSize.width() / scaleFactor, globalSize.height() / scaleFactor);
-}
 
 MuMainWidget::MuMainWidget(QWidget* parent)
     : QWidget(parent)
@@ -70,10 +62,12 @@ void MuMainWidget::setDocument(const QString& filePath) {
 }
 
 void MuMainWidget::paintEvent(QPaintEvent* event) {
-    QPainter painter{this};
+    // debug
+    static FpsCount fps;
+    if (auto cnt = fps.count())
+        qDebug() << "fps:" << *cnt;
 
-    // 很卡, 但是是我们需要的!
-    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    QPainter painter{this};
 
     // 找到需要渲染的第一页
     int page = 0;
@@ -96,9 +90,12 @@ void MuMainWidget::paintEvent(QPaintEvent* event) {
 
         if (_imgLRUCache.contains(page)) {
             const auto& img = _imgLRUCache.get(page);
+            // 很卡, 但是是我们需要的! (目前无法解决这个破烂问题...)
+            painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
             painter.drawImage((width() - size.width()) / 2, y, img);
             emit updatePdfPosInfo(_pageIndex, _totalPages, _zoom);
         } else {
+            painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
             painter.fillRect((width() - size.width()) / 2, y, size.width(),
                              size.height(), Qt::white);
             // painter.drawPixmap((size.width() - _placeholderIcon.width()) / 2,
@@ -129,7 +126,9 @@ void MuMainWidget::invalidate() {
 
 void MuMainWidget::loadPage(int page, float zoom, QImage image) {
     static_cast<void>(zoom);
-    image.setDevicePixelRatio(DevicePixelRatio);
+    if constexpr (DevicePixelRatio != 1) {
+        image.setDevicePixelRatio(DevicePixelRatio);
+    }
     _imgLRUCache.emplace(page, std::move(image));
     update();
 }
