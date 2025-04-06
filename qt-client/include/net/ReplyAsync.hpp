@@ -38,10 +38,9 @@ public:
                           reply = _reply] { func(reply); });
     }
 
-    
-
-    template <typename Func>
-    auto exec(Func&& func) -> decltype(func(std::declval<QNetworkReply*>())) {
+    template <typename Func, 
+              typename Res = decltype(std::declval<Func>()(std::declval<QNetworkReply*>()))>
+    Res exec(Func&& func) {
         QEventLoop loop;
         QObject::connect(_reply, &QNetworkReply::finished,
                          &loop, &QEventLoop::quit);
