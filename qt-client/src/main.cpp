@@ -278,9 +278,17 @@ int _zmain(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    HX::HttpClient cli;
-    cli.connectToHost("http://127.0.0.1:28205");
-    qDebug() << cli.get("/").toUtf8();
+    qDebug() << HX::HttpClient{}
+        .get("http://127.0.0.1:28205/")
+        .exec([](QNetworkReply* reply){
+            return reply->readAll();
+        });
+    HX::HttpClient{}
+        .get("http://127.0.0.1:28205/")
+        .async([](QNetworkReply* reply){
+            qDebug() << reply->readAll();
+        });
+    qDebug() << "NUV";
     return app.exec();
 }
 

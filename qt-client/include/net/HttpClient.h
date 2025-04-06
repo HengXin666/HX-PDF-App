@@ -22,31 +22,25 @@
 
 #include <QObject>
 
-QT_BEGIN_NAMESPACE
-class QTcpSocket;
-QT_END_NAMESPACE
+#include <memory>
+
+#include <net/ReplyAsync.hpp>
 
 namespace HX {
 
-class HttpClient : public QObject {
+class [[nodiscard]] HttpClient : public QObject {
     Q_OBJECT
 public:
     explicit HttpClient(QObject* parent = nullptr);
 
-    void connectToHost(const QString& url);
+    HX::ReplyAsync get(const QString& url) &&;
 
-    QString get(const QString& path);
+    HX::ReplyAsync range(const QString& url, int begin, int end) &&;
 
-Q_SIGNALS:
-    /**
-     * @brief Http解析完成
-     */
-    void parseCompleted();
-
+    HX::ReplyAsync range(const QString& url) &&;
 private:
-    QTcpSocket* _tcp;
-    QString _headsBuf; // 请求头
-    QString _resBuf;   // 请求结果
+    HttpClient& operator=(HttpClient&&) = delete;
+    std::unique_ptr<QNetworkAccessManager> _manager;
 };
 
 } // namespace HX
