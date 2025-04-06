@@ -6,11 +6,11 @@ file(GLOB_RECURSE src_files CONFIGURE_DEPENDS
 
 include_directories(include)
 
-add_subdirectory(lib/HXLibs)
-
 add_executable(${projectName}
     ${src_files}
     ${qrc_files}
 )
 
+# 子模块 HXLibs
+add_subdirectory(lib/HXLibs)
 target_link_libraries(${projectName} PUBLIC HXLibs)
