@@ -17,42 +17,38 @@
  * You should have received a copy of the GNU General Public License
  * along with HX-PDF-App.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _HX_FPS_COUNT_H_
-#define _HX_FPS_COUNT_H_
+#ifndef _HX_HTTP_CLIENT_H_
+#define _HX_HTTP_CLIENT_H_
 
-#include <chrono>
-#include <optional>
+#include <QObject>
+
+QT_BEGIN_NAMESPACE
+class QTcpSocket;
+QT_END_NAMESPACE
 
 namespace HX {
 
-class FpsCount {
+class HttpClient : public QObject {
+    Q_OBJECT
 public:
-    explicit FpsCount() = default;
+    explicit HttpClient(QObject* parent = nullptr);
 
+    void connectToHost(const QString& url);
+
+    QString get(const QString& path);
+
+Q_SIGNALS:
     /**
-     * @brief 计算FPS, 如果满足一次计算结果, 则返回. 否则返回 std::optional<>{}
-     * @return std::optional<int> 帧率
+     * @brief Http解析完成
      */
-    std::optional<std::size_t> count() {
-        ++_cnt;
-        auto now  = std::chrono::steady_clock::now();
-        auto ms_d = std::chrono::duration_cast<std::chrono::milliseconds>(
-            now - _start).count();
-        if (ms_d < 1000) {
-            return {};
-        }
-        _start = now;
-        auto res = _cnt * 1000 / ms_d;
-        _cnt = 0;
-        return res;
-    }
+    void parseCompleted();
 
 private:
-    std::size_t _cnt = 0;
-    decltype(std::chrono::steady_clock::now()) 
-        _start = std::chrono::steady_clock::now();
+    QTcpSocket* _tcp;
+    QString _headsBuf; // 请求头
+    QString _resBuf;   // 请求结果
 };
 
 } // namespace HX
 
-#endif // !_HX_FPS_COUNT_H_
+#endif // !_HX_HTTP_CLIENT_H_

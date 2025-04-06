@@ -261,7 +261,7 @@ int __main(int argc, char* argv[]) {
 
 #include <widget/MuMainWidget.h>
 
-int main(int argc, char* argv[]) {    
+int _zmain(int argc, char* argv[]) {    
     QApplication app(argc, argv);
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
     const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
@@ -271,6 +271,16 @@ int main(int argc, char* argv[]) {
     scrollArea->setWidget(muWidget);
     scrollArea->setWidgetResizable(true);
     scrollArea->show();
+    return app.exec();
+}
+
+#include <net/HttpClient.h>
+
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
+    HX::HttpClient cli;
+    cli.connectToHost("http://127.0.0.1:28205");
+    qDebug() << cli.get("/").toUtf8();
     return app.exec();
 }
 

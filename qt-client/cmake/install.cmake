@@ -55,8 +55,8 @@ target_link_libraries(${projectName} PRIVATE Qt::Network)
 
 # 第三方依赖 (qpdf)
 if (WIN32)
-    # 不用这个库
-    if(FALSE)
+    # qpdf
+    if(FALSE) # 不用这个库
         list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/lib/qpdf")
         find_package(qpdf CONFIG REQUIRED)
         target_link_libraries(${projectName} PRIVATE qpdf::libqpdf)
@@ -73,6 +73,7 @@ if (WIN32)
         )
     endif()
     
+    # MuPdf
     if(TRUE)
         include_directories("${PROJECT_SOURCE_DIR}/lib/mupdf/include")
         if (CMAKE_BUILD_TYPE STREQUAL "Release")

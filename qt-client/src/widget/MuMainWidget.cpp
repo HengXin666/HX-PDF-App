@@ -13,6 +13,10 @@
 
 namespace HX {
 
+/**
+ * @brief 一些配置 (调试使用), 目前无法保证以后会怎么样. 因为渲染卡顿的问题, 依旧存在...
+ */
+
 static constexpr int DPI = 150;
 static constexpr int DevicePixelRatio = 1;
 
@@ -32,7 +36,6 @@ MuMainWidget::MuMainWidget(QWidget* parent)
     connect(_pageRenderer, &HX::Mu::PageRenderer::pageReady,
             this, &MuMainWidget::loadPage);
     grabGesture(Qt::SwipeGesture);
-    qDebug() << "DPI" << _dpi;
 }
 
 void MuMainWidget::setDocument(const QString& filePath) {
@@ -63,9 +66,9 @@ void MuMainWidget::setDocument(const QString& filePath) {
 
 void MuMainWidget::paintEvent(QPaintEvent* event) {
     // debug
-    static FpsCount fps;
-    if (auto cnt = fps.count())
-        qDebug() << "fps:" << *cnt;
+    // static FpsCount fps;
+    // if (auto cnt = fps.count())
+    //     qDebug() << "fps:" << *cnt;
 
     QPainter painter{this};
 
