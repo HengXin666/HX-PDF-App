@@ -32,19 +32,34 @@ public:
         , _manger(std::move(manger))
     {}
 
+    /**
+     * @brief 异步回调, 注意需要处理正确和错误的情况, 因为绑定的是`QNetworkReply::finished`信号
+     * @param func 
+     */
     void async(std::function<void(QNetworkReply*)> func) {
         QObject::connect(_reply, &QNetworkReply::finished, _reply,
                          [manger = std::move(_manger), func = std::move(func),
-                          reply = _reply] { func(reply); });
+                          reply = _reply] {
+                             func(reply);
+                             reply->disconnect(reply);
+                         });
     }
 
-    template <typename Func, 
-              typename Res = decltype(std::declval<Func>()(std::declval<QNetworkReply*>()))>
+    /**
+     * @brief 同步等待, 注意需要处理正确和错误的情况, 因为绑定的是`QNetworkReply::finished`信号
+     * @tparam Func [](QNetworkReply*) -> Res {}
+     * @tparam Res 
+     * @param func 
+     * @return Res 
+     */
+    template <typename Func, typename Res = decltype(Func{}(
+                                 static_cast<QNetworkReply*>(nullptr)))>
     Res exec(Func&& func) {
         QEventLoop loop;
-        QObject::connect(_reply, &QNetworkReply::finished,
-                         &loop, &QEventLoop::quit);
+        QObject::connect(_reply, &QNetworkReply::finished, &loop,
+                         &QEventLoop::quit);
         loop.exec();
+        _reply->disconnect(_reply);
         return func(_reply);
     }
 

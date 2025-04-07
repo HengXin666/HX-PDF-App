@@ -278,17 +278,18 @@ int _zmain(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    qDebug() << HX::HttpClient{}
-        .get("http://127.0.0.1:28205/")
-        .exec([](QNetworkReply* reply){
+    const char* url = "http://www.baidu.com/";
+    qDebug() << "exec:" << HX::HttpClient{}
+        .get(url)
+        .exec([](QNetworkReply* reply) {
             return reply->readAll();
         });
     HX::HttpClient{}
-        .get("http://127.0.0.1:28205/")
-        .async([](QNetworkReply* reply){
-            qDebug() << reply->readAll();
+        .get(url)
+        .async([](QNetworkReply* reply) {
+            qDebug() << "succes:" << reply->readAll();
         });
-    qDebug() << "NUV";
+    qDebug() << "AUV";
     return app.exec();
 }
 
