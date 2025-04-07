@@ -29,22 +29,45 @@ namespace HX {
 /**
  * @brief Http请求工厂类
  */
-class [[nodiscard]] HttpRequestFactory {
+class [[nodiscard]] HttpClient {
 public:
-    explicit HttpRequestFactory();
+    explicit HttpClient() noexcept
+        : _manager(std::make_unique<QNetworkAccessManager>())
+    {}
 
-    HX::ReplyAsync get(const QString& url) &&;
+    HX::ReplyAsync get(const QString& url) & {
+        return HX::ReplyAsync{_get(url)};
+    }
 
-    HX::ReplyAsync range(const QString& url, int begin, int end) &&;
+    HX::ReplyAsync get(const QString& url) && {
+        return HX::ReplyAsync{_get(url), std::move(_manager)};
+    }
+
+    HX::ReplyAsync range(const QString& url, int begin, int end) & {
+        return HX::ReplyAsync{_range(url, begin, end)};
+    }
+    HX::ReplyAsync range(const QString& url, int begin, int end) && {
+        return HX::ReplyAsync{_range(url, begin, end), std::move(_manager)};
+    }
 
     /**
      * @brief 使用`Range`获取待传输的文件大小
      * @param url 
      * @return HX::ReplyAsync 应使用`reply->header(QNetworkRequest::ContentLengthHeader)`获取文件大小
      */
-    HX::ReplyAsync useRangeGetSize(const QString& url) &&;
+    HX::ReplyAsync useRangeGetSize(const QString& url) & {
+        return HX::ReplyAsync{_useRangeGetSize(url)};
+    }
+    HX::ReplyAsync useRangeGetSize(const QString& url) && {
+        return HX::ReplyAsync{_useRangeGetSize(url), std::move(_manager)};
+    }
+
 private:
-    HttpRequestFactory& operator=(HttpRequestFactory&&) = delete;
+    QNetworkReply* _get(const QString& url);
+    QNetworkReply* _range(const QString& url, int begin, int end);
+    QNetworkReply* _useRangeGetSize(const QString& url);
+
+    HttpClient& operator=(HttpClient&&) = delete;
     std::unique_ptr<QNetworkAccessManager> _manager;
 };
 

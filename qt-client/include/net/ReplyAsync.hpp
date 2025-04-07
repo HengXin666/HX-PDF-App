@@ -27,6 +27,11 @@ namespace HX {
 
 class ReplyAsync {
 public:
+    explicit ReplyAsync(QNetworkReply* reply)
+        : _reply(reply)
+        , _manger()
+    {}
+
     explicit ReplyAsync(QNetworkReply* reply, std::unique_ptr<QNetworkAccessManager>&& manger)
         : _reply(reply)
         , _manger(std::move(manger))
@@ -35,8 +40,13 @@ public:
     /**
      * @brief 异步回调, 注意需要处理正确和错误的情况, 因为绑定的是`QNetworkReply::finished`信号
      * @param func 
+     * @throw std::runtime_error 没有资源所有权
      */
     void async(std::function<void(QNetworkReply*)> func) {
+        if (!_manger) [[unlikely]] {
+            // 没有资源所有权
+            throw std::runtime_error{"No ownership of resources! (ReplyAsync::_manger is nullptr)"};
+        }
         QObject::connect(_reply, &QNetworkReply::finished, _reply,
                          [manger = std::move(_manger), func = std::move(func),
                           reply = _reply] {
@@ -50,11 +60,18 @@ public:
      * @tparam Func [](QNetworkReply*) -> Res {}
      * @tparam Res 
      * @param func 
+     * @throw std::runtime_error 不应该持有资源
      * @return Res 
      */
-    template <typename Func, typename Res = decltype(Func{}(
-                                 static_cast<QNetworkReply*>(nullptr)))>
+    template <typename Func, 
+              typename Res = decltype(std::declval<Func>()(static_cast<QNetworkReply*>(nullptr)))>
     Res exec(Func&& func) {
+        if (_manger) [[unlikely]] {
+            // 不应该持有资源
+            throw std::runtime_error{
+                "Should not hold resources! (ReplyAsync::_manger is not nullptr)"
+            };
+        }
         QEventLoop loop;
         QObject::connect(_reply, &QNetworkReply::finished, &loop,
                          &QEventLoop::quit);

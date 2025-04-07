@@ -10,6 +10,8 @@
 
 #include <mu/Page.h>
 #include <mu/PageRenderer.h>
+#include <mu/doc/NetRangeDocument.h>
+#include <mu/stream/NetRangeStream.h>
 
 namespace HX {
 
@@ -41,10 +43,10 @@ MuMainWidget::MuMainWidget(QWidget* parent)
 void MuMainWidget::setDocument(const QString& filePath) {
     auto tmpByteArr = filePath.toUtf8();
     const char* filePathCharPtr = tmpByteArr.constData();
-    _doc = std::make_unique<HX::Mu::Document>(filePathCharPtr);
+    _doc = std::make_unique<HX::Mu::NetRangeDocument>(filePathCharPtr);
     try {
         // todo 设置自定义网络流
-        _doc->setStream({}).buildDocument(filePathCharPtr);
+        _doc->setStream(HX::Mu::NetRangeStream::make()).buildDocument(filePathCharPtr);
     } catch (std::exception const& ec) {
         // todo Debug使用的, 正式情况下, 这里不会抛异常!
         qDebug() << ec.what();

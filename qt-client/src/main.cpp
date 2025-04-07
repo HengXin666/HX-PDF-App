@@ -280,10 +280,10 @@ int __main(int argc, char* argv[]) {
 
 #include <widget/MuMainWidget.h>
 
-int _zmain(int argc, char* argv[]) {    
+int main(int argc, char* argv[]) {    
     QApplication app(argc, argv);
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
-    const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
+    const char* filename2 = "http://127.0.0.1:28205/files/Cpp-T.pdf";
     QScrollArea* scrollArea = new QScrollArea;
     auto* muWidget = new HX::MuMainWidget{scrollArea};
     muWidget->setDocument(filename2);
@@ -293,21 +293,36 @@ int _zmain(int argc, char* argv[]) {
     return app.exec();
 }
 
-#include <net/HttpRequestFactory.h>
+#include <net/HttpClient.h>
 
-int main(int argc, char* argv[]) {
+int _23main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     const char* url = "http://www.baidu.com/";
-    qDebug() << "exec:" << HX::HttpRequestFactory{}
-        .useRangeGetSize("http://127.0.0.1:28205/files/Cpp-T.pdf")
-        .exec([](QNetworkReply* reply) {
+    HX::HttpClient cli{};
+
+    cli.range("http://127.0.0.1:28205/files/Cpp-T.pdf", 0, 1)
+        .exec([&](QNetworkReply* reply) {
             qDebug() << reply->headers();
-            return reply->header(QNetworkRequest::ContentLengthHeader).toLongLong();
+            qDebug() << reply->readAll();
+
+            cli.range("http://127.0.0.1:28205/files/Cpp-T.pdf", 1, 2)
+                .exec([&](QNetworkReply* reply) {
+                    qDebug() << reply->headers();
+                    qDebug() << reply->readAll();
+
+                    cli.range("http://127.0.0.1:28205/files/Cpp-T.pdf", 2, 3)
+                        .exec([&](QNetworkReply* reply) {
+                            qDebug() << reply->headers();
+                            qDebug() << reply->readAll();
+                        });
+                });
         });
+
     // HX::HttpRequestFactory{}
     //     .get(url)
     //     .async([](QNetworkReply* reply) {
-    //         qDebug() << "succes:" << reply->header(QNetworkRequest::ContentLengthHeader);
+    //         qDebug() << "succes:" <<
+    //         reply->header(QNetworkRequest::ContentLengthHeader);
     //     });
     qDebug() << "AUV";
     return app.exec();
