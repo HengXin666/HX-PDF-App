@@ -177,7 +177,7 @@ int __main(int argc, char* argv[]) {
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
     const char* filename2 = "D:/command/Github/HX-PDF-App/qt-client/TestPdfSrc/imouto.epub";
     auto bs = HX::Mu::StreamFuncBuilder{
-        [](fz_context* ctx, fz_stream* stm, size_t max) ->int {
+        [](fz_context* ctx, fz_stream* stm, size_t max) -> int {
             auto* sp = (StreamState*)stm->state;
             int res = sp->read(std::min(max, StreamState::MaxBufSize));
             if (res == 0 && sp->isEof()) {
@@ -192,20 +192,39 @@ int __main(int argc, char* argv[]) {
             // 无需操作, 因为RAII
             qDebug() << "raii";
         },
-        [](fz_context* ctx, fz_stream* stm, int64_t offset, int whence) -> void {
+        [](fz_context* ctx, fz_stream* stm, int64_t offset,
+           int whence) -> void {
             auto* sp = (StreamState*)stm->state;
             // 根据 whence 转换为正确的 std::ios_base::seekdir
             std::ios_base::seekdir dir;
             switch (whence) {
-                case 0: dir = std::ios::beg; break;
-                case 1: dir = std::ios::cur; break;
-                case 2: dir = std::ios::end; break;
-                default: dir = std::ios::beg; break;
+            case 0: dir = std::ios::beg; break;
+            case 1: dir = std::ios::cur; break;
+            case 2: dir = std::ios::end; break;
+            default: dir = std::ios::beg; break;
             }
             sp->seekg(offset, static_cast<int>(dir));
             // 重新获取当前的绝对位置, 并更新 stm->pos
             stm->pos = sp->pos();
         }
+        /*
+        int64_t pos = stm->pos - (stm->wp - stm->rp);
+
+            // Convert to absolute pos
+            if (whence == 1) {
+                // Was relative to current pos
+                offset += pos;
+            } else if (whence == 2) {
+                // Was relative to end
+                offset += stm->pos;
+            }
+
+            if (offset < 0)
+                offset = 0;
+            if (offset > stm->pos)
+                offset = stm->pos;
+            stm->rp += (int)(offset - pos);
+        */
     };
     MuPdf pdf1{filename1};
     pdf1.setStream(bs).buildDocument(".pdf");
@@ -274,21 +293,22 @@ int _zmain(int argc, char* argv[]) {
     return app.exec();
 }
 
-#include <net/HttpClient.h>
+#include <net/HttpRequestFactory.h>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     const char* url = "http://www.baidu.com/";
-    qDebug() << "exec:" << HX::HttpClient{}
-        .get(url)
+    qDebug() << "exec:" << HX::HttpRequestFactory{}
+        .useRangeGetSize("http://127.0.0.1:28205/files/Cpp-T.pdf")
         .exec([](QNetworkReply* reply) {
-            return reply->readAll();
+            qDebug() << reply->headers();
+            return reply->header(QNetworkRequest::ContentLengthHeader).toLongLong();
         });
-    HX::HttpClient{}
-        .get(url)
-        .async([](QNetworkReply* reply) {
-            qDebug() << "succes:" << reply->readAll();
-        });
+    // HX::HttpRequestFactory{}
+    //     .get(url)
+    //     .async([](QNetworkReply* reply) {
+    //         qDebug() << "succes:" << reply->header(QNetworkRequest::ContentLengthHeader);
+    //     });
     qDebug() << "AUV";
     return app.exec();
 }

@@ -59,7 +59,6 @@ public:
         QObject::connect(_reply, &QNetworkReply::finished, &loop,
                          &QEventLoop::quit);
         loop.exec();
-        _reply->disconnect(_reply);
         return func(_reply);
     }
 

@@ -17,10 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with HX-PDF-App.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _HX_HTTP_CLIENT_H_
-#define _HX_HTTP_CLIENT_H_
-
-#include <QObject>
+#ifndef _HX_HTTP_REQUEST_FACTORY_H_
+#define _HX_HTTP_REQUEST_FACTORY_H_
 
 #include <memory>
 
@@ -28,21 +26,28 @@
 
 namespace HX {
 
-class [[nodiscard]] HttpClient : public QObject {
-    Q_OBJECT
+/**
+ * @brief Http请求工厂类
+ */
+class [[nodiscard]] HttpRequestFactory {
 public:
-    explicit HttpClient(QObject* parent = nullptr);
+    explicit HttpRequestFactory();
 
     HX::ReplyAsync get(const QString& url) &&;
 
     HX::ReplyAsync range(const QString& url, int begin, int end) &&;
 
-    HX::ReplyAsync range(const QString& url) &&;
+    /**
+     * @brief 使用`Range`获取待传输的文件大小
+     * @param url 
+     * @return HX::ReplyAsync 应使用`reply->header(QNetworkRequest::ContentLengthHeader)`获取文件大小
+     */
+    HX::ReplyAsync useRangeGetSize(const QString& url) &&;
 private:
-    HttpClient& operator=(HttpClient&&) = delete;
+    HttpRequestFactory& operator=(HttpRequestFactory&&) = delete;
     std::unique_ptr<QNetworkAccessManager> _manager;
 };
 
 } // namespace HX
 
-#endif // !_HX_HTTP_CLIENT_H_
+#endif // !_HX_HTTP_REQUEST_FACTORY_H_
