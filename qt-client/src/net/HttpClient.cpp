@@ -14,7 +14,7 @@ QNetworkReply* HttpClient::_range(const QString& url, int begin, int end) {
     QByteArray rangeValue = QByteArray("bytes=")
                             + QByteArray::number(begin)
                             + "-" 
-                            + QByteArray::number(end);
+                            + QByteArray::number(end - 1);
     req.setRawHeader("Range", rangeValue);
     return _manager->get(req);
 }

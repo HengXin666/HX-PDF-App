@@ -171,7 +171,7 @@ void TextRenderWidget::paintEvent(QPaintEvent* event) {
 #include <QTransform>
 #include <QScreen>
 
-int __main(int argc, char* argv[]) {
+int _2main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
@@ -205,6 +205,7 @@ int __main(int argc, char* argv[]) {
             }
             sp->seekg(offset, static_cast<int>(dir));
             // 重新获取当前的绝对位置, 并更新 stm->pos
+            qDebug() << stm->pos << "->" << offset;
             stm->pos = sp->pos();
         }
         /*
@@ -267,11 +268,13 @@ int __main(int argc, char* argv[]) {
     QMainWindow mainWindow;
     auto *renderWidget = new TextRenderWidget();
 
-    renderWidget->setTextItems(pdf2.page(10)->renderText(1));
-
-    mainWindow.setCentralWidget(renderWidget);
     mainWindow.resize(800, 600);
     mainWindow.show();
+
+    for (int i = 0; i < 100; ++i) {
+        renderWidget->setTextItems(pdf2.page(i)->renderText(1));
+        mainWindow.setCentralWidget(renderWidget);
+    }
 
     qDebug() << QGuiApplication::primaryScreen()->logicalDotsPerInch();
 

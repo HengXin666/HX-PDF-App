@@ -43,6 +43,13 @@ public:
         return HX::ReplyAsync{_get(url), std::move(_manager)};
     }
 
+    /**
+     * @brief 断点续传 [begin, end) 范围内的数据
+     * @param url 
+     * @param begin 
+     * @param end 
+     * @return HX::ReplyAsync 
+     */
     HX::ReplyAsync range(const QString& url, int begin, int end) & {
         return HX::ReplyAsync{_range(url, begin, end)};
     }
