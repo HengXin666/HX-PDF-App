@@ -17,14 +17,16 @@ void NetRangeStream::init() {
     _maxLen = _cli
         .useRangeGetSize(_url)
         .exec([](QNetworkReply* reply){
-        if (reply->error() != QNetworkReply::NetworkError::NoError) [[unlikely]] {
-            throw std::runtime_error{reply->errorString().toUtf8()};
-        }
-        return reply->header(QNetworkRequest::ContentLengthHeader).toULongLong();
-    });
+            if (reply->error() != QNetworkReply::NetworkError::NoError) [[unlikely]] {
+                throw std::runtime_error{reply->errorString().toUtf8()};
+            }
+            return reply->header(QNetworkRequest::ContentLengthHeader).toULongLong();
+        });
 }
 
 StreamFuncBuilder NetRangeStream::make() {
+    // @todo 可行的优化
+    // https://mupdf.readthedocs.io/en/latest/progressive-loading.html
     StreamFuncBuilder res{[](fz_context* ctx, fz_stream* stm, size_t max) -> int {
         auto* sp = (NetRangeStream*)stm->state;
         if (sp->_nowPos >= sp->_range.end || sp->_nowPos < sp->_range.begin) {
