@@ -15,7 +15,7 @@ class PdfTestController {
                 <h2>基于<a href="https://github.com/HengXin666/HXLibs">HXLibs</a>高性能Http服务器框架开发</h2>)");
             co_return;
         })
-        .on<GET>("/files/**", [] ENDPOINT {
+        .on<GET, HEAD>("/files/**", [] ENDPOINT {
             PARSE_MULTI_LEVEL_PARAM(uwp);
             try {
                 // todo: 需要补充完整路径!
