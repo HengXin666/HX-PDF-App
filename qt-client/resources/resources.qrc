@@ -45,4 +45,7 @@
     <qresource prefix="/imgs">
         <file alias="book.png">imgs/book.png</file>
     </qresource>
+    <qresource prefix="/qml">
+        <file alias="Main.qml">qml/Main.qml</file>
+    </qresource>
 </RCC>

@@ -10,7 +10,7 @@ file(GLOB_RECURSE qrc_files CONFIGURE_DEPENDS
 
 include_directories(include)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick)
 
 qt_add_executable(${projectName}
     ${src_files}
@@ -23,7 +23,23 @@ target_link_libraries(${projectName}
     PRIVATE Qt::Core
     PRIVATE Qt::Gui
     PRIVATE Qt::Widgets
+    PRIVATE Qt::Qml
+    PRIVATE Qt::Quick
 )
+
+set(QT_QML_GENERATE_QMLLS_INI ON)
+
+# 添加 QML 文件所在目录作为资源路径 (推荐方式)
+qt_add_qml_module(${projectName}
+    URI ${projectName}
+    VERSION 1.0
+    QML_FILES
+        resources/qml/Main.qml
+)
+
+# 为了 include <QQuickStyle>
+find_package(Qt6 REQUIRED COMPONENTS QuickControls2)
+target_link_libraries(${projectName} PRIVATE Qt6::QuickControls2)
 
 # Qt拓展 (PDF操作 与 渲染)
 find_package(Qt6 REQUIRED COMPONENTS Pdf PdfWidgets)
