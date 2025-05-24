@@ -286,10 +286,11 @@ int _2main(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {    
     QApplication app(argc, argv);
     const char* filename1 = "D:/command/Github/HX-PDF-App/cpp-backend/pdf-data/Cpp-T.pdf";
-    const char* filename2 = "http://127.0.0.1:28205/files/Cpp-T.pdf";
+    const char* filename2 = "http://127.0.0.1:28205/files/github.pdf";
+    const char* filename3 = "http://127.0.0.1:28205/files/Cpp-T.pdf";
     QScrollArea* scrollArea = new QScrollArea;
     auto* muWidget = new HX::MuMainWidget{scrollArea};
-    muWidget->setDocument(filename2);
+    muWidget->setDocument(filename3);
     scrollArea->setWidget(muWidget);
     scrollArea->setWidgetResizable(true);
     scrollArea->show();

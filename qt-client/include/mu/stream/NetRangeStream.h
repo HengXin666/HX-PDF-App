@@ -20,17 +20,42 @@
 #ifndef _HX_NET_RANGE_STREAM_H_
 #define _HX_NET_RANGE_STREAM_H_
 
+#include <memory>
+
 #include <mu/StreamFuncBuilder.hpp>
 #include <net/HttpClient.h>
+#include <net/RangeRequestCacheManagement.h>
 
 namespace HX::Mu {
 
+/**
+ * @brief 一个支持断点续传并且缓存下载数据的流
+ */
 class NetRangeStream {
+public:
+    static StreamFuncBuilder make();
+    explicit NetRangeStream(const char* url) noexcept;
+    void init();
+private:
+    QString _url;
+    HX::HttpClient _cli;
+    std::unique_ptr<HX::RangeRequestCacheManagement> _rangeCache;
+    std::size_t _maxLen;
+    std::size_t _nowPos;
+};
+
+
+#if 0
+
+/**
+ * @brief 一个支持断点续传的流 (已经废弃, 因为发现解析时候会有重复读取, 所以会有重复请求, 故废弃)
+ */
+class __NetRangeStream {
     inline static constexpr std::size_t BufMaxSize = 4 * 1024 * 1024;
 public:
     static StreamFuncBuilder make();
 
-    explicit NetRangeStream(const char* url) noexcept;
+    explicit __NetRangeStream(const char* url) noexcept;
 
     void init();
 private:
@@ -48,6 +73,8 @@ private:
     // 取值示例: [_nowPos - begin, _nowPos - end]
     QByteArray _buf;
 };
+
+#endif
 
 } // namespace HX::Mu
 
