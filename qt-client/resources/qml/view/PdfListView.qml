@@ -2,26 +2,30 @@ import QtQuick
 import QtQuick.Controls
 import QmlPdfPageModel 1.0
 
-Rectangle {
+FocusScope {
     id: root
-    width: 640
-    height: 480
     visible: true
     property string url
     
-    function onUpdataImage(index: int) {
+    function onUpdateImage(index: int) {
         const item = listView.itemAtIndex(index);
-        console.log("刷新:", index, item);
         if (item) {
-            item.source = `image://pdf/${index}?t=${Date.now()}`
+            item.source = `image://pdf/${index}?t=${Date.now()}`;
         }
     }
 
-    Rectangle {
+    function onUpdateZoom() {
+        console.log("刷新");
+        listView.forceLayout();
+    }
+
+     Rectangle {
         id: pdfTopBar
-        anchors.top: parent.top
+        anchors.top: parent.top; width: parent.width; height: 40
+        color: "#820cd7"
         Text {
-            text: `总页数 ${QmlPdfPageModel._totalPages}`
+            anchors.centerIn: parent
+            text: "总页数: " + QmlPdfPageModel._totalPages
         }
     }
 
@@ -31,6 +35,7 @@ Rectangle {
         anchors.topMargin: 10
         anchors.fill: parent
         model: QmlPdfPageModel._totalPages
+        
         orientation: ListView.Vertical
         delegate: Image {
             required property int index
@@ -40,19 +45,36 @@ Rectangle {
             fillMode: Image.PreserveAspectFit
             smooth: true
             asynchronous: true
-            onStatusChanged: {
-                if (status === Image.Ready) {
-                    console.log("第", index, "页加载完成");
-                } else {
-                    console.log("第", index, "页加载中...", width, height);
-                }
-            }
+        }
+    }
+
+    // 按键监听
+    Keys.onShortcutOverride: (event) => {
+        console.log("按键!");
+        if ((event.modifiers & Qt.ControlModifier) 
+            && (event.key === Qt.Key_Plus || event.key === Qt.Key_Equal)
+        ) {
+            // Ctrl + '+'
+            event.accepted = true;
+            QmlPdfPageModel.setZoom(Math.min(3.0, QmlPdfPageModel.getZoom() + 0.1));
+            console.log("Ctrl + '+' 被按下");
+        } else if ((event.modifiers & Qt.ControlModifier) 
+            && event.key === Qt.Key_Minus
+        ) {
+            // Ctrl + '-'
+            event.accepted = true;
+            QmlPdfPageModel.setZoom(Math.max(0.1, QmlPdfPageModel.getZoom() - 0.1));
+            console.log("Ctrl + '-' 被按下");
         }
     }
 
     Component.onCompleted: {
         // 绑定C++信号到QT槽
-        QmlPdfPageModel.updataImage.connect(onUpdataImage);
+        QmlPdfPageModel.updateImage.connect(onUpdateImage);
+        QmlPdfPageModel.updateZoom.connect(onUpdateZoom);
+
+        // 强行获取焦点
+        root.forceActiveFocus();
 
         QmlPdfPageModel.setDocument(url);
         console.log("页数:", QmlPdfPageModel._totalPages);

@@ -25,6 +25,10 @@
 #include <list>
 #include <unordered_map>
 #include <stdexcept>
+#include <mutex>
+#if __cplusplus >= 201402L
+#   include <shared_mutex>
+#endif // __cplusplus >= 201402L
 
 namespace HX {
 
@@ -241,6 +245,191 @@ protected:
     mutable std::list<KeyValuePairType> _cacheList;
     std::unordered_map<K, ListIterator> _cacheMap;
     std::size_t _capacity;
+};
+
+/**
+ * @brief 一个满足LRU(最近最少使用)缓存约束的线程安全数据结构
+ * @tparam K 键类型
+ * @tparam V 值类型
+ */
+template <class K, class V>
+class ThreadSafeLRUCache : public LRUCache<K, V> {
+public:
+    explicit ThreadSafeLRUCache(std::size_t capacity) noexcept
+        : LRUCache<K, V>(capacity)
+        , _mtx()
+    {}
+
+    /**
+     * @brief 从线程不安全的LRUCache进行移动构造
+     * @param that LRUCache<K, V>
+     */
+    ThreadSafeLRUCache(LRUCache<K, V>&& that) noexcept
+        : LRUCache<K, V>(std::move(that))
+        , _mtx()
+    {}
+
+    /**
+     * @brief 因为关联了锁, 锁的赋值运算符是被删除的, 因此不支持(赋值/移动)(构造/拷贝)
+     * 考虑到实际开发中LRU一般作为单例类成员, 并不太需要移动构造, 因此我认为这样设计是合理的
+     * 你也不想我套一个智能指针, 
+     * 或者在移动的语义下, 构造了一个新的锁成员吧...
+     */
+
+    // 删除拷贝构造函数和拷贝赋值操作符
+    ThreadSafeLRUCache(const ThreadSafeLRUCache&) = delete;
+    ThreadSafeLRUCache& operator=(const ThreadSafeLRUCache&) = delete;
+
+    // 删除移动构造函数和移动赋值操作符
+    ThreadSafeLRUCache(ThreadSafeLRUCache&&) = delete;
+    ThreadSafeLRUCache& operator=(ThreadSafeLRUCache&&) = delete;
+
+    /**
+     * @brief 获取键`key`对应的值, 如果不存在则`抛出异常`
+     * @param key 
+     * @return V 
+     * @throw std::range_error(键: 不存在)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
+     */
+    const V& get(const K& key) const {
+#if __cplusplus >= 201402L
+        std::shared_lock<decltype(_mtx)> _{_mtx};
+#else
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+#endif // __cplusplus >= 201402L
+        return LRUCache<K, V>::get(key);
+    }
+
+    /**
+     * @brief 检查缓存中是否包含某个键
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    bool contains(const K& key) const {
+#if __cplusplus >= 201402L
+        std::shared_lock<decltype(_mtx)> _{_mtx};
+#else
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+#endif // __cplusplus >= 201402L
+        return LRUCache<K, V>::contains(key);
+    }
+
+#if __cplusplus >= 201402L
+    /**
+     * @brief 获取键`key`对应的值 (透明查找), 如果不存在则`抛出异常`
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 
+     * @return V 
+     * @throw std::range_error(键: 不存在)
+     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
+     */
+    template <class X>
+    const V& get(const X& key) const {
+        std::shared_lock<decltype(_mtx)> _{_mtx};
+        return LRUCache<K, V>::get(key);
+    }
+
+    /**
+     * @brief 检查缓存中是否包含某个键 (透明比较)
+     * @tparam X 需要支持`Compare::is_transparent`
+     * @param key 需要检查的键
+     * @return true 存在
+     * @return false 不存在
+     */
+    template <class X>
+    bool contains(const X& x) const {
+        std::shared_lock<decltype(_mtx)> _{_mtx};
+        return LRUCache<K, V>::contains(x);
+    }
+#endif // __cplusplus >= 201402L
+
+    /**
+     * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
+     * @param key 
+     * @param value 
+     */
+    void insert(const K& key, const V& value) {
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+        LRUCache<K, V>::insert(key, value);
+    }
+
+    /**
+     * @brief 插入一个键值对, 如果有相同的则会覆盖旧的
+     * @param key 
+     * @param value 
+     */
+    void insert(const K& key, V&& value) {
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+        LRUCache<K, V>::insert(key, std::move(value));
+    }
+
+
+    /**
+     * @brief 插入一个键值对(以原地构造的方式), 如果有相同的则会覆盖旧的
+     * @tparam Args 
+     * @param key 
+     * @param args 
+     */
+    template <class... Args>
+    void emplace(const K& key, Args&&... args) {
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+        LRUCache<K, V>::emplace(key, std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 获取当前LUR中缓存的数据个数
+     * @return std::size_t 
+     */
+    std::size_t size() const noexcept {
+#if __cplusplus >= 201402L
+        std::shared_lock<decltype(_mtx)> _{_mtx};
+#else
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+#endif // __cplusplus >= 201402L
+        return LRUCache<K, V>::_cacheMap.size();
+    }
+
+    /**
+     * @brief 判断LUR是否为空
+     * @return true 为空
+     * @return false 非空
+     */
+    bool empty() const noexcept {
+#if __cplusplus >= 201402L
+        std::shared_lock<decltype(_mtx)> _{_mtx};
+#else
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+#endif // __cplusplus >= 201402L
+        return LRUCache<K, V>::_cacheMap.empty();
+    }
+
+    /**
+     * @brief 返回缓存的最大容量
+     * @return std::size_t 
+     */
+    std::size_t capacity() const noexcept {
+        return LRUCache<K, V>::_capacity;
+    }
+
+    /**
+     * @brief 清空缓存中的所有元素
+     */
+    void clear() noexcept {
+        std::unique_lock<decltype(_mtx)> _{_mtx};
+        LRUCache<K, V>::clear();
+    }
+protected:
+#if __cplusplus >= 201703L
+    /// @brief 读写锁
+    mutable std::shared_mutex _mtx;
+#elif __cplusplus >= 201402L
+    /// @brief 读写带定时锁
+    mutable std::shared_timed_mutex _mtx;
+#else
+    /// @brief 普通锁
+    mutable std::mutex _mtx;
+#endif // __cplusplus >= 201703L
 };
 
 } // namespace HX

@@ -16,6 +16,7 @@ Window {
 
     Loader {
         id: pdfListView
+        anchors.fill: parent
         sourceComponent: pdfViewComponent
     }
 }

@@ -48,6 +48,8 @@ void QmlPdfPageModel::setDocument(const QString& url) {
     _totalPages = _doc->pageCount();    
     _pageSizes.resize(_totalPages);
 
+    qDebug() << "解析到页数:" << _totalPages;
+
     for (int i = 0; i < _totalPages; ++i) {
         auto size = _doc->page(i)->size() * (_dpi / 72.f);
         _pageSizes[i] = std::move(size);
@@ -60,8 +62,8 @@ void QmlPdfPageModel::setDocument(const QString& url) {
 
 QImage QmlPdfPageModel::requestImage(const QString& id, QSize* size, const QSize& requestedSize) {
     int index = id.section("?", 0, 0).toInt();
-    qDebug() << id << "requestedSize" << requestedSize << "index:" << index;
     if (!_imgLRUCache.contains(index)) {
+        qDebug() << "渲染" << index << "中...";
         _pageRenderer->requestPage(index, _zoom, _dpi);
         QImage placeholder(pageSize(index).toSize(), QImage::Format_RGBA8888);
         placeholder.fill(Qt::black);
@@ -70,6 +72,8 @@ QImage QmlPdfPageModel::requestImage(const QString& id, QSize* size, const QSize
         }
         return placeholder;
     }
+    qDebug() << "渲染" << index << "缓存命中!";
+    
     auto res = _imgLRUCache.get(index);
     if (size) {
         *size = res.size();
@@ -77,27 +81,18 @@ QImage QmlPdfPageModel::requestImage(const QString& id, QSize* size, const QSize
     return res;
 }
 
-qreal QmlPdfPageModel::getPageHeight(int index) {
-    qDebug() << "第" << index << "页高度:" << (_pageSizes[index] * (_zoom / DevicePixelRatio)).height();
-    return (_pageSizes[index] * (_zoom / DevicePixelRatio)).height();
-}
-
-qreal QmlPdfPageModel::getPageWidth(int index) {
-    qDebug() << "第" << index << "页宽度:" << (_pageSizes[index] * (_zoom / DevicePixelRatio)).width();
-    return (_pageSizes[index] * (_zoom / DevicePixelRatio)).width();
-}
-
-QSizeF QmlPdfPageModel::pageSize(int index) {
+QSizeF QmlPdfPageModel::pageSize(int index) const {
     return _pageSizes[index] * (_zoom / DevicePixelRatio);
 }
 
 void QmlPdfPageModel::invalidate() {
     // 更新总高度
-    _totalHeight = 0;
+    int totalHeight = 0;
     for (int i = 0; i < _totalPages; ++i) {
-        _totalHeight += pageSize(i).height() + _pageSpacing;
+        totalHeight += getPageHeight(i) + _pageSpacing;
     }
 
+    _totalHeight = totalHeight;
     _imgLRUCache.clear();
 
     emit totalHeightChanged();
@@ -109,7 +104,7 @@ void QmlPdfPageModel::loadPage(int page, float zoom, QImage image) {
         image.setDevicePixelRatio(DevicePixelRatio);
     }
     _imgLRUCache.emplace(page, std::move(image));
-    emit updataImage(page);
+    emit updateImage(page);
 }
 
 } // namespace HX

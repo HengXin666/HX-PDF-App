@@ -56,23 +56,36 @@ public:
      */
     Q_INVOKABLE void setDocument(const QString& url);
 
+    /**
+     * @brief 渲染PDF为图片 (由qml处请求)
+     * @param id url部分 (此处是 image://pdf/${index}?t=${Date.now()} 的 ${index}?t=${Date.now()} 部分)
+     * @param size 大小
+     * @param requestedSize 请求期望的大小
+     * @return QImage 
+     */
     QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize) override;
 
-    int getTotalPages() const {
-        return _totalPages;
+    int getTotalPages() const { return _totalPages; }
+    int getTotalHeight() const { return _totalHeight; }
+    Q_INVOKABLE qreal getZoom() const { return _zoom; }
+
+    Q_INVOKABLE void setZoom(qreal zoom) { 
+        _zoom = zoom; 
+        qDebug() << "当前" << _zoom;
+        invalidate();
+        emit updateZoom();
     }
 
-    int getTotalHeight() const {
-        return _totalHeight;
-    }
+    Q_INVOKABLE qreal getPageHeight(int index) const { return pageSize(index).height(); }
+    Q_INVOKABLE qreal getPageWidth(int index) const { return pageSize(index).width(); }
 
-    Q_INVOKABLE qreal getPageHeight(int index);
-    Q_INVOKABLE qreal getPageWidth(int index);
 Q_SIGNALS:
     void totalPagesChanged();
     void totalHeightChanged();
+    void zoomChanged();
 
-    void updataImage(int index);
+    void updateZoom();
+    void updateImage(int index);
 
 private:
     /**
@@ -80,7 +93,7 @@ private:
      * @param index 
      * @return QSizeF 
      */
-    QSizeF pageSize(int index);
+    QSizeF pageSize(int index) const;
 
     /**
      * @brief 作废数据
@@ -91,7 +104,7 @@ private:
 
     HX::Mu::PageRenderer* _pageRenderer;
     std::unique_ptr<HX::Mu::Document> _doc;
-    HX::LRUCache<int, QImage> _imgLRUCache;
+    HX::ThreadSafeLRUCache<int, QImage> _imgLRUCache;
     std::vector<QSizeF> _pageSizes; // 每一页的页面大小 (原始大小 * dpi缩放)
                                     // (为了适配某些画面大小不一样的pdf和计算高度)
 
@@ -113,6 +126,12 @@ private:
         int _totalHeight
         READ getTotalHeight
         NOTIFY totalHeightChanged
+    );
+    Q_PROPERTY(
+        qreal _zoom
+        READ getZoom
+        WRITE setZoom
+        NOTIFY zoomChanged
     );
 };
 
