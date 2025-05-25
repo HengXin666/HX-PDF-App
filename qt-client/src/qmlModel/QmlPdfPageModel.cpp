@@ -63,7 +63,7 @@ QImage QmlPdfPageModel::requestImage(const QString& id, QSize* size, const QSize
     qDebug() << id << "requestedSize" << requestedSize << "index:" << index;
     if (!_imgLRUCache.contains(index)) {
         _pageRenderer->requestPage(index, _zoom, _dpi);
-        QImage placeholder(pageSize(index).toSize(), QImage::Format_ARGB32_Premultiplied);
+        QImage placeholder(pageSize(index).toSize(), QImage::Format_RGBA8888);
         placeholder.fill(Qt::black);
         if (size) {
             *size = placeholder.size();

@@ -29,6 +29,7 @@ Rectangle {
         id: listView
         anchors.top: pdfTopBar.bottom
         anchors.topMargin: 10
+        anchors.fill: parent
         model: QmlPdfPageModel._totalPages
         orientation: ListView.Vertical
         delegate: Image {
@@ -39,6 +40,13 @@ Rectangle {
             fillMode: Image.PreserveAspectFit
             smooth: true
             asynchronous: true
+            onStatusChanged: {
+                if (status === Image.Ready) {
+                    console.log("第", index, "页加载完成");
+                } else {
+                    console.log("第", index, "页加载中...", width, height);
+                }
+            }
         }
     }
 
