@@ -35,6 +35,8 @@ qt_add_qml_module(${projectName}
     VERSION 1.0
     QML_FILES
         resources/qml/Main.qml
+        resources/qml/view/MainMenuView.qml
+        resources/qml/view/PdfListView.qml
 )
 
 # 为了 include <QQuickStyle>

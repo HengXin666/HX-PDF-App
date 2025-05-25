@@ -17,14 +17,15 @@
  * You should have received a copy of the GNU General Public License
  * along with HX-PDF-App.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _HX_MU_MAIN_WIDGET_H_
-#define _HX_MU_MAIN_WIDGET_H_
+#ifndef _HX_QML_PDF_PAGE_MODEL_H_
+#define _HX_QML_PDF_PAGE_MODEL_H_
 
 #include <memory>
 #include <vector>
 
 #include <QWidget>
 #include <QImage>
+#include <QQuickImageProvider>
 
 #include <mu/Document.h>
 #include <utils/LRUCache.hpp>
@@ -37,42 +38,55 @@ class PageRenderer;
 
 } // namespace Mu
 
-/**
- * @brief MuPdf库的主显示界面控件
- */
-class MuMainWidget : public QWidget {
+class QmlPdfPageModel : public QQuickImageProvider {
     Q_OBJECT
+
+    explicit QmlPdfPageModel();
 public:
-    explicit MuMainWidget(QWidget* parent = nullptr);
+    // 单例, 声明周期由 addImageProvider 管理
+    static QmlPdfPageModel* get() {
+        static QmlPdfPageModel* g = new QmlPdfPageModel{};
+        return g;
+    }
 
-    void setDocument(const QString& filePath);
-
-Q_SIGNALS:
     /**
-     * @brief 更新PDF位置信息
-     * @param pageIndex 当前页面索引
-     * @param totalPages 总页数
-     * @param zoom 缩放倍率
+     * @brief 从url中加载文档
+     * @param url 
+     * @return void 
      */
-    void updatePdfPosInfo(int pageIndex, int totalPages, qreal zoom);
+    Q_INVOKABLE void setDocument(const QString& url);
 
-protected:
-    void paintEvent(QPaintEvent* event) override;
+    QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize) override;
+
+    int getTotalPages() const {
+        return _totalPages;
+    }
+
+    int getTotalHeight() const {
+        return _totalHeight;
+    }
+
+    Q_INVOKABLE qreal getPageHeight(int index);
+    Q_INVOKABLE qreal getPageWidth(int index);
+Q_SIGNALS:
+    void totalPagesChanged();
+    void totalHeightChanged();
+
+    void updataImage(int index);
 
 private:
-    QSizeF pageSize(int num);
+    /**
+     * @brief 获取 index 页的大小
+     * @param index 
+     * @return QSizeF 
+     */
+    QSizeF pageSize(int index);
 
     /**
      * @brief 作废数据
      */
     void invalidate();
 
-    /**
-     * @brief 加载页面
-     * @param page 页面索引
-     * @param zoom 缩放倍率
-     * @param image 图片
-     */
     void loadPage(int page, float zoom, QImage image);
 
     HX::Mu::PageRenderer* _pageRenderer;
@@ -88,8 +102,20 @@ private:
     qreal _zoom;        // 缩放倍率
     qreal _dpi;         // 屏幕 dpi
     QPixmap _placeholderIcon; // 占位图片 (未加载时候显示的)
+
+    // 注册
+    Q_PROPERTY(
+        int _totalPages
+        READ getTotalPages 
+        NOTIFY totalPagesChanged
+    );
+    Q_PROPERTY(
+        int _totalHeight
+        READ getTotalHeight
+        NOTIFY totalHeightChanged
+    );
 };
 
 } // namespace HX
 
-#endif // !_HX_MU_MAIN_WIDGET_H_
+#endif // !_HX_QML_PDF_PAGE_MODEL_H_
