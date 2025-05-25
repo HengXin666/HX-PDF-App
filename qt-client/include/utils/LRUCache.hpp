@@ -76,9 +76,8 @@ public:
      * @param key 
      * @return V 
      * @throw std::range_error(键: 不存在)
-     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
      */
-    const V& get(const K& key) const {
+    V get(const K& key) const {
         auto it = _cacheMap.find(key);
         if (it != _cacheMap.end()) {
             _cacheList.splice(_cacheList.begin(), _cacheList, it->second);
@@ -322,10 +321,9 @@ public:
      * @param key 
      * @return V 
      * @throw std::range_error(键: 不存在)
-     * @warning 值得注意的是, 因为返回的是引用, 所以请尽早的使用, 防止悬挂引用! (缓存开大点); 不然请老老实实拷贝吧
      */
     template <class X>
-    const V& get(const X& key) const {
+    V get(const X& key) const {
         std::shared_lock<decltype(_mtx)> _{_mtx};
         return LRUCache<K, V>::get(key);
     }

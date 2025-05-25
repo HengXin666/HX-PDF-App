@@ -16,7 +16,12 @@ FocusScope {
 
     function onUpdateZoom() {
         console.log("刷新");
-        listView.forceLayout();
+        for (let i = 0; i < listView.count; ++i) {
+            const item = listView.itemAtIndex(i);
+            if (item) {
+                item.source = `image://pdf/${i}?t=${Date.now()}`;
+            }
+        }
     }
 
      Rectangle {
@@ -69,14 +74,14 @@ FocusScope {
     }
 
     Component.onCompleted: {
+        QmlPdfPageModel.setDocument(url);
+        console.log("页数:", QmlPdfPageModel.getTotalPages(), QmlPdfPageModel._totalPages);
+
         // 绑定C++信号到QT槽
         QmlPdfPageModel.updateImage.connect(onUpdateImage);
         QmlPdfPageModel.updateZoom.connect(onUpdateZoom);
 
         // 强行获取焦点
         root.forceActiveFocus();
-
-        QmlPdfPageModel.setDocument(url);
-        console.log("页数:", QmlPdfPageModel._totalPages);
     }
 }

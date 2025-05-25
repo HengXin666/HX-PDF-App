@@ -24,6 +24,7 @@ QmlPdfPageModel::QmlPdfPageModel()
     , _pageRenderer(new HX::Mu::PageRenderer{this})
     , _doc()
     , _imgLRUCache(10)
+    , _pageSizes()
     , _pageSpacing(8)
     , _pageIndex(0)
     , _totalPages(0)
@@ -72,12 +73,11 @@ QImage QmlPdfPageModel::requestImage(const QString& id, QSize* size, const QSize
         }
         return placeholder;
     }
-    qDebug() << "渲染" << index << "缓存命中!";
-    
     auto res = _imgLRUCache.get(index);
     if (size) {
         *size = res.size();
     }
+    qDebug() << "渲染" << index << "缓存命中!" << res.size();
     return res;
 }
 

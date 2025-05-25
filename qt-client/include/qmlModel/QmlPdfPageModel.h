@@ -65,8 +65,8 @@ public:
      */
     QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize) override;
 
-    int getTotalPages() const { return _totalPages; }
-    int getTotalHeight() const { return _totalHeight; }
+    Q_INVOKABLE int getTotalPages() const { return _totalPages; }
+    Q_INVOKABLE int getTotalHeight() const { return _totalHeight; }
     Q_INVOKABLE qreal getZoom() const { return _zoom; }
 
     Q_INVOKABLE void setZoom(qreal zoom) { 
@@ -76,8 +76,18 @@ public:
         emit updateZoom();
     }
 
-    Q_INVOKABLE qreal getPageHeight(int index) const { return pageSize(index).height(); }
-    Q_INVOKABLE qreal getPageWidth(int index) const { return pageSize(index).width(); }
+    Q_INVOKABLE qreal getPageHeight(int index) const {
+        if (index >= _pageSizes.size()) [[unlikely]] {
+            return 320.0;
+        }
+        return pageSize(index).height();
+    }
+    Q_INVOKABLE qreal getPageWidth(int index) const {
+        if (index >= _pageSizes.size()) [[unlikely]] {
+            return 320.0;
+        }
+        return pageSize(index).width();
+    }
 
 Q_SIGNALS:
     void totalPagesChanged();

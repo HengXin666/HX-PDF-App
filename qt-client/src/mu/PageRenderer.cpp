@@ -22,9 +22,9 @@ void PageRenderer::run() {
 }
 
 void PageRenderer::requestPage(int page, float zoom, int dpi) {
-    _pageNum = page;
-    _zoom = zoom;
-    _dpi = dpi;
+    this->_pageNum = page;
+    this->_zoom = zoom; // @todo 为什么 不使用 this, 直接 _zoom = zoom 会有bug?
+    this->_dpi = dpi;
     start();
 }
 

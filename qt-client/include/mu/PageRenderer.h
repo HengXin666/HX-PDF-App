@@ -84,7 +84,7 @@ protected:
 private:
     Document* _doc;
     int _pageNum;
-    int _zoom;
+    float _zoom;
     int _dpi;
 };
 
