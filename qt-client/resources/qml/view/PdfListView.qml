@@ -19,13 +19,16 @@ FocusScope {
         for (let i = 0; i < listView.count; ++i) {
             const item = listView.itemAtIndex(i);
             if (item) {
-                item.source = `image://pdf/${i}?t=${Date.now()}`;
+                item.width = QmlPdfPageModel.getPageWidth(i);
+                item.height = QmlPdfPageModel.getPageHeight(i);
+                item.source = `image://pdf/${i}?f=${Date.now()}`;
             }
         }
     }
 
-     Rectangle {
+    Rectangle {
         id: pdfTopBar
+        z: 2
         anchors.top: parent.top; width: parent.width; height: 40
         color: "#820cd7"
         Text {
@@ -36,20 +39,34 @@ FocusScope {
 
     ListView {
         id: listView
+        z: 1
         anchors.top: pdfTopBar.bottom
         anchors.topMargin: 10
         anchors.fill: parent
         model: QmlPdfPageModel._totalPages
+        clip: true
         
         orientation: ListView.Vertical
         delegate: Image {
             required property int index
             width: QmlPdfPageModel.getPageWidth(index)
             height: QmlPdfPageModel.getPageHeight(index)
+            x: (ListView.view.width - width) / 2
             source: `image://pdf/${index}?t=${Date.now()}`
             fillMode: Image.PreserveAspectFit
             smooth: true
             asynchronous: true
+            cache: false
+            visible: status === Image.Ready
+        }
+
+        // 滚动速度, 默认是 1000
+        flickDeceleration: 2400
+
+        // 滚动条
+        ScrollBar.vertical: ScrollBar {
+            policy: ScrollBar.AlwaysOn
+            minimumSize: 0.1 // 滚动条最小占比
         }
     }
 

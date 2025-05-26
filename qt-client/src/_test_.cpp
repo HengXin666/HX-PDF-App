@@ -332,4 +332,4 @@ int _23main(int argc, char* argv[]) {
     return app.exec();
 }
 
-#include "_test_main.moc"
+#include "_test_.moc"

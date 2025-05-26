@@ -2,7 +2,7 @@ file(GLOB_RECURSE src_files CONFIGURE_DEPENDS
     src/*.cpp
     include/*.h
     include/*.hpp
-)
+) 
 
 file(GLOB_RECURSE qrc_files CONFIGURE_DEPENDS 
     resources/*.qrc
@@ -110,6 +110,9 @@ else()
 endif()
 
 if (WIN32)
+    # 解决乱码问题, 为MSVC定制
+    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
     # 解决路径问题, 确保 windeployqt.exe 存在
     set(QT_BIN_DIR "${QT_COMPILER_PATH}/bin")
     if(NOT EXISTS "${QT_BIN_DIR}/windeployqt.exe")
